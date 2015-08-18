@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit-users] how to handle initial file header?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C1c34ba170702052243k2b37dadcqff00f30caa4139ef%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000004.html">
+   <LINK REL="Next"  HREF="000006.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit-users] how to handle initial file header?</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C1c34ba170702052243k2b37dadcqff00f30caa4139ef%40mail.gmail.com%3E"
+       TITLE="[pylit-users] how to handle initial file header?">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Tue Feb  6 07:43:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000004.html">[pylit-users] how to handle initial file header?
+</A></li>
+        <LI>Next message: <A HREF="000006.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 2/6/07, Riccardo Murri &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">riccardo.murri at gmail.com</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> Could the state machine in PyLit be modified to allow three states,
+</I>&gt;<i> &quot;header&quot; (H), &quot;code&quot; (C) and &quot;text&quot; (T), starting in &quot;header&quot; mode and
+</I>&gt;<i> allowing transitions from H to C *or* T, from C to T and vice-versa,
+</I>&gt;<i> but never from C/T to H?  Like this::
+</I>&gt;<i>
+</I>&gt;<i>   +--- H ---+
+</I>&gt;<i>   |         |
+</I>&gt;<i>   v         v
+</I>&gt;<i>   C &lt;-----&gt; T
+</I>&gt;<i>
+</I>
+Upon closer inspection of the source code, it seems to me that PyLit
+is already behaving in this way.  Please forget this comment.
+
+Ciao,
+Riccardo
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000004.html">[pylit-users] how to handle initial file header?
+</A></li>
+	<LI>Next message: <A HREF="000006.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

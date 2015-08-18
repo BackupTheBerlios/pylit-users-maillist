@@ -1,0 +1,772 @@
+From riccardo.murri at gmail.com  Tue Feb  6 00:42:02 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Tue, 6 Feb 2007 00:42:02 +0100
+Subject: [pylit-users] how to handle initial file header?
+In-Reply-To: <20070131103323.GB5352@localhost>
+References: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+	<20070130143833.GB15867@localhost> <20070131103323.GB5352@localhost>
+Message-ID: <1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+
+Hello,
+
+sorry for the long delay in answering - I've had a very busy week...
+
+
+On 1/31/07, G. Milde <milde at users.berlios.de> wrote:
+> On 29.01.07, Riccardo Murri wrote:
+> > On 1/25/07, G. Milde <g.milde at quantentunnel.de> wrote:
+> > > On 24.01.07, Riccardo Murri wrote:
+> > > >
+> > > > It seems to me that there is a general need for similar header
+> > > > processing, in almost any programming language: every source file that
+> > > > is likely to be publicly available on the web will carry copyright and
+> > > > licence information at the start of the file, at a minimum.
+> ...
+>
+> > > > it would be nice to extend PyLit so that it can translate all
+> > > > the "leading portion" of a file to reST comments.
+>
+> > > > A criterion could be: everything from the start of the file to the
+> > > > first blank line is turned into a reST comment.
+>
+> How about
+>
+> * any code that appears before the first text block is translated to a rst
+>   comment?
+>
+> If we want to keep the line numbers in sync for text and code source, the
+> reStructured Text markup for these header lines must start at the same line
+> as the first header line. Therfore, header lines could not be marked as
+> literal block (this would require the "::" and an empty line above the code).
+>
+
+Mapping the file header as a comment is ok IMHO; indeed, keeping the
+line numbers in sync for text and code source can be a great aid when
+debugging L.P. code.
+
+(And I see from the source that there might be an option in the future
+to map the header to a user-specified reST directive.)
+
+
+> OTOH, a *comment* may start at the same line as the comment marker and it
+> includes subsequent indented lines. Comments are visible in the reStructured
+> Text source but hidden in the pretty-printed output.
+>
+> With a header converted to comment in the text source, everything before the
+> first text block (i.e. before the first paragraph using the matching comment
+> string) will be hidden away (in HTML or PDF output).
+>
+> This seems a good compromise, the advantages
+>
+> * line numbers are kept
+> * the "normal" code conversion rules (indent/unindent by `codeindent` apply
+> * greater flexibility: you can hide a repeating header in a project
+>   consisting of many source files.
+>
+> set off the disadvantages
+>
+> - it may come as surprise if a part of the file is not "printed",
+> - one more syntax element to learn for rst newbees to start with pylit,
+>   (however, starting from the code source, this will be auto-generated)
+>
+> In the case that there is no matching comment at all, the complete code
+> source will become a comment -- however, in this case it is not very likely
+> the source is a literate document.
+>
+
+Hmm, this already fooled me on the very first example I tried: I
+started by drafting some Python code and then trying to use PyLit to
+turn it into a reST document for adding L.P. documentation.
+
+For instance::
+
+  #!/usr/bin/env python
+  #
+  # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+  #
+  #
+  # This is used as an introductory example to literate programming
+  # in the literateprograms.org Wiki.
+
+  # count down from 99 to 1
+  for bottles in range(99,0,-1):
+      ....
+
+is mapped to reST::
+
+  ..  #!/usr/bin/env python
+    #
+    # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+    #
+    # This is used as an introductory example to literate programming
+    # in the literateprograms.org Wiki.
+    #
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+
+that is, a whole comment paragraph, whereas the input *code source*::
+
+  #!/usr/bin/env python
+  #
+  # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+  #
+
+  # This is used as an introductory example to literate programming
+  # in the literateprograms.org Wiki.
+
+  # count down from 99 to 1
+  for bottles in range(99,0,-1):
+      ....
+
+is correctly mapped to reST::
+
+  ..  #!/usr/bin/env python
+    #
+    # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+    #
+
+  This is used as an introductory example to literate programming
+  in the literateprograms.org Wiki.
+
+  ::
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+
+Although this might justly regarded as a corner case, it may confuse
+novices (like I am); it should be clearly stated in the documentation
+that a documentation paragraph should *separate* the header from the
+code (meaning, there should be a block, preceded and followed by an
+empty line, all whose lines match the doc comment string).
+
+Could the state machine in PyLit be modified to allow three states,
+"header" (H), "code" (C) and "text" (T), starting in "header" mode and
+allowing transitions from H to C *or* T, from C to T and vice-versa,
+but never from C/T to H?  Like this::
+
+  +--- H ---+
+  |         |
+  v         v
+  C <-----> T
+
+
+> (I do not really like the additional indent of the first line, however
+> ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+> Increasing the indent of all code parts is possible but makes bad use of
+> available line space. And for Python users the problem is familiar from
+> long string literals like::
+>
+>   s = """first line
+>   second line
+>   """
+> )
+>
+
+PyLit could add two spaces "  " to all the lines in the header except the
+first one (in code2txt), and remove them in txt2code; this would align
+all lines in the converted header, while maintaing the comment block
+within correct reST syntax.
+
+Ciao,
+Riccardo
+
+
+From riccardo.murri at gmail.com  Tue Feb  6 01:28:07 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Tue, 6 Feb 2007 01:28:07 +0100
+Subject: [pylit-users] how to handle initial file header?
+In-Reply-To: <1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+References: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+	<20070130143833.GB15867@localhost> <20070131103323.GB5352@localhost>
+	<1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+Message-ID: <1c34ba170702051628oac25123pfae3b487f0f3f410@mail.gmail.com>
+
+On 2/6/07, Riccardo Murri <riccardo.murri at gmail.com> wrote:
+> On 1/31/07, G. Milde <milde at users.berlios.de> wrote:
+> > (I do not really like the additional indent of the first line, however
+> > ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+> > Increasing the indent of all code parts is possible but makes bad use of
+> > available line space. And for Python users the problem is familiar from
+> > long string literals like::
+> >
+> >   s = """first line
+> >   second line
+> >   """
+> > )
+>
+> PyLit could add two spaces "  " to all the lines in the header except the
+> first one (in code2txt), and remove them in txt2code; this would align
+> all lines in the converted header, while maintaing the comment block
+> within correct reST syntax.
+>
+
+Please find a patch attached against pylit.py (of SVN rev 13) to
+implement this functionality.  I have only tested it on the attached
+sample file.
+
+Ciao,
+Riccardo
+-------------- next part --------------
+--- pylit.py.orig	2007-02-05 21:38:15.000000000 +0100
++++ pylit.py	2007-02-06 01:22:39.000000000 +0100
+@@ -260,10 +260,22 @@
+ 
+         if line.startswith(".."):
+             
+-# Strip leading comment string (typically added by `Code2Text.header`) and
+-# return the result of processing the data with the code handler::
+-
+-            self.data_iterator.push(line.replace("..", "", 1))
++# Strip the leading two characters of each line in the header block
++# (this undoes any rst comment block marker and indent added by
++# `Code2Text.header`) and return the result of processing the data
++# with the code handler::
++            
++            lines = [ line[2:] ]
++            # read until first blank line, appending stripped line to
++            # a temporary array
++            for line in self.data_iterator:
++                lines.append(line[2:])
++                if "" == line.lstrip():
++                    break
++            # push stripped lines back into data_iterator
++            lines.reverse()
++            for line in lines:
++                self.data_iterator.push(line)
+             return self.code()
+         
+ # No header code found: Push back first non-header line and set state to
+@@ -471,7 +483,7 @@
+ # If we want to keep the line numbers in sync for text and code source, the
+ # reStructured Text markup for these header lines must start at the same line
+ # as the first header line. Therfore, header lines could not be marked as
+-# literal block (this would require the "::" and an empty line above the code).
++# literal block (this would require the ``::`` and an empty line above the code).
+ # 
+ # OTOH, a comment may start at the same line as the comment marker and it
+ # includes subsequent indented lines. Comments are visible in the reStructured
+@@ -518,13 +530,17 @@
+             self.state = "text"
+             return []
+ 
+-# Leading code detected: handle with the `code` method and prepend a rst
+-# comment marker to the first line. (One could be even more flexible by
+-# storing the "header-marker-string" in a class data argument.) ::
++# Leading code detected: handle with the `code` method and prepend a
++# rst comment marker to the first line (one could be even more
++# flexible by storing the "header-marker-string" in a class data
++# argument), and indent all subsequent lines by two spaces::
+ 
+         lines = self.code()
+         if lines:
+             lines[0] = ".." + lines[0]
++            def prepend_two_spaces(s):
++                return "  "+s
++            lines[1:] = map(prepend_two_spaces, lines[1:]) 
+         return lines
+             
+             
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 99bottles.py
+Type: text/x-python
+Size: 645 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/pylit-users/attachments/20070206/77bb3612/attachment.py>
+
+From riccardo.murri at gmail.com  Tue Feb  6 07:43:44 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Tue, 6 Feb 2007 07:43:44 +0100
+Subject: [pylit-users] how to handle initial file header?
+In-Reply-To: <1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+References: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+	<20070130143833.GB15867@localhost> <20070131103323.GB5352@localhost>
+	<1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+Message-ID: <1c34ba170702052243k2b37dadcqff00f30caa4139ef@mail.gmail.com>
+
+On 2/6/07, Riccardo Murri <riccardo.murri at gmail.com> wrote:
+>
+> Could the state machine in PyLit be modified to allow three states,
+> "header" (H), "code" (C) and "text" (T), starting in "header" mode and
+> allowing transitions from H to C *or* T, from C to T and vice-versa,
+> but never from C/T to H?  Like this::
+>
+>   +--- H ---+
+>   |         |
+>   v         v
+>   C <-----> T
+>
+
+Upon closer inspection of the source code, it seems to me that PyLit
+is already behaving in this way.  Please forget this comment.
+
+Ciao,
+Riccardo
+
+
+From milde at users.berlios.de  Tue Feb  6 15:51:55 2007
+From: milde at users.berlios.de (G. Milde)
+Date: Tue, 6 Feb 2007 15:51:55 +0100
+Subject: [pylit-users] how to handle initial file header?
+In-Reply-To: <1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+References: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+	<20070130143833.GB15867@localhost>
+	<20070131103323.GB5352@localhost>
+	<1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+Message-ID: <20070206145155.GB18035@localhost>
+
+On  6.02.07, Riccardo Murri wrote:
+
+> sorry for the long delay in answering - I've had a very busy week...
+
+Nice to hear from you again.
+
+> On 1/31/07, G. Milde <milde at users.berlios.de> wrote:
+> > On 29.01.07, Riccardo Murri wrote:
+> > > On 1/25/07, G. Milde <g.milde at quantentunnel.de> wrote:
+> > > > On 24.01.07, Riccardo Murri wrote:
+> > > > >
+> > > > > It seems to me that there is a general need for similar header
+> > > > > processing, in almost any programming language
+...
+
+> > If we want to keep the line numbers in sync for text and code source, the
+> > reStructured Text markup for these header lines must start at the same line
+> > as the first header line. Therfore, header lines could not be marked as
+> > literal block (this would require the "::" and an empty line above the code).
+
+> Mapping the file header as a comment is ok IMHO; indeed, keeping the
+> line numbers in sync for text and code source can be a great aid when
+> debugging L.P. code.
+
+(And vital for the --doctest option that works on the text-source. This
+is why I removed the removal of lonely ``::``-s from the code source.)
+
+> (And I see from the source that there might be an option in the future
+> to map the header to a user-specified reST directive.)
+
+(Which will make the indentation issue more complicated, as with a
+configurable `header_prefix` attribute, the additional indent of the
+first line is not always 2 but len(header_prefix).
+
+The nice thing is, that a directive allows text starting on the same line
+as well.
+
+> > - it may come as surprise if a part of the file is not "printed",
+> > - one more syntax element to learn for rst newbees to start with pylit,
+> >   (however, starting from the code source, this will be auto-generated)
+> >
+> > In the case that there is no matching comment at all, the complete code
+> > source will become a comment -- however, in this case it is not very likely
+> > the source is a literate document.
+> >
+
+> Hmm, this already fooled me on the very first example I tried: 
+
+Sorry for this. I plan to extend the tutorial to cover the case of
+"attached" or "minor" comments. 
+
+So, actually, a PyLit novice needs to know at least three rst syntax
+elements:
+
+* literal blocks
+* comment (for the header)
+* paragraph separator (blank line) (i.e. whitespace only: "^[ \t]*$")
+
+> I started by drafting some Python code and then trying to use PyLit to
+> turn it into a reST document for adding L.P. documentation.
+
+This is how I imagine the "normal" use of pylit.
+
+> Although this might justly regarded as a corner case, it may confuse
+> novices (like I am); it should be clearly stated in the documentation
+> that a documentation paragraph should *separate* the header from the
+> code (meaning, there should be a block, preceded and followed by an
+> empty line, all whose lines match the doc comment string).
+
+Actually, the case to be documented is the separation of text and code
+blocks (or chunks or paragraphs). The leading code block to become a
+header (and rst comment) is just a special case but the logic to separate
+it from a text block is the same as further down.
+
+As said above, I plan to spent a section in the tutorial on this example.
+May I copy your example to the tutorial? (And the
+99bottles.py to the examples?)
+
+> > (I do not really like the additional indent of the first line, however
+> > ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+
+> PyLit could add two spaces "  " to all the lines in the header except the
+> first one (in code2txt), and remove them in txt2code; this would align
+> all lines in the converted header, while maintaing the comment block
+> within correct reST syntax.
+
+Unfortunately, this would only move the problem further down. As (in
+order to satisfy the Python "indentation consistency" requirement) PyLit
+will use the indentation of the first "code" line as base for all code
+line indents, it is at least as strange to see::
+
+  ..  #!/usr/bin/env python
+      #
+      # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+      # 
+     
+  This is an introductory example to literate programming::
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+  
+with the inconsistency between the two first code blocks as it is to see::
+
+  ..  #!/usr/bin/env python
+    #
+    # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+    #
+     
+  This is an introductory example to literate programming::
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+
+with the inconsistent indent confined to the very first line. Actually, I
+find the latter even less intrusive.
+
+This becomes really an issue with e.g.::
+
+  .. pylit_header:: #!/usr/bin/env python
+                    #
+                    # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+                    #
+
+
+Thanks
+
+G?nter
+
+
+
+From riccardo.murri at gmail.com  Tue Feb  6 16:28:04 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Tue, 6 Feb 2007 16:28:04 +0100
+Subject: [pylit-users] how to handle initial file header?
+In-Reply-To: <20070206145155.GB18035@localhost>
+References: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+	<20070130143833.GB15867@localhost> <20070131103323.GB5352@localhost>
+	<1c34ba170702051542g2b004545vad7f867202020956@mail.gmail.com>
+	<20070206145155.GB18035@localhost>
+Message-ID: <1c34ba170702060728k1d3a6cbcwd89056cce1871536@mail.gmail.com>
+
+On 2/6/07, G. Milde <milde at users.berlios.de> wrote:
+>
+> So, actually, a PyLit novice needs to know at least three rst syntax
+> elements:
+>
+> * literal blocks
+> * comment (for the header)
+> * paragraph separator (blank line) (i.e. whitespace only: "^[ \t]*$")
+>
+> > I started by drafting some Python code and then trying to use PyLit to
+> > turn it into a reST document for adding L.P. documentation.
+>
+> This is how I imagine the "normal" use of pylit.
+>
+> > Although this might justly regarded as a corner case, it may confuse
+> > novices (like I am); it should be clearly stated in the documentation
+> > that a documentation paragraph should *separate* the header from the
+> > code (meaning, there should be a block, preceded and followed by an
+> > empty line, all whose lines match the doc comment string).
+>
+> Actually, the case to be documented is the separation of text and code
+> blocks (or chunks or paragraphs). The leading code block to become a
+> header (and rst comment) is just a special case but the logic to separate
+> it from a text block is the same as further down.
+>
+> As said above, I plan to spent a section in the tutorial on this example.
+> May I copy your example to the tutorial? (And the
+> 99bottles.py to the examples?)
+>
+
+Feel free to do it!  It's just a few code lines put together in a
+haste to try PyLit's new features; I may try to make it more "literate
+programming"-ish, if you wish to distribute it :-)
+
+
+> > > (I do not really like the additional indent of the first line, however
+> > > ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+>
+> > PyLit could add two spaces "  " to all the lines in the header except the
+> > first one (in code2txt), and remove them in txt2code; this would align
+> > all lines in the converted header, while maintaing the comment block
+> > within correct reST syntax.
+>
+> Unfortunately, this would only move the problem further down. As (in
+> order to satisfy the Python "indentation consistency" requirement) PyLit
+> will use the indentation of the first "code" line as base for all code
+> line indents, it is at least as strange to see::
+>
+>   ..  #!/usr/bin/env python
+>       #
+>       # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+>       #
+>
+>   This is an introductory example to literate programming::
+>
+>     # count down from 99 to 1
+>     for bottles in range(99,0,-1):
+>         ....
+>
+> with the inconsistency between the two first code blocks as it is to see::
+>
+>   ..  #!/usr/bin/env python
+>     #
+>     # 99bottles.py -- print the famous "99 bottles of beer" song lyrics
+>     #
+>
+>   This is an introductory example to literate programming::
+>
+>     # count down from 99 to 1
+>     for bottles in range(99,0,-1):
+>         ....
+>
+> with the inconsistent indent confined to the very first line. Actually, I
+> find the latter even less intrusive.
+>
+
+Well, I think the different indentation shows the difference between
+the header and the later code blocks, so I prefer the former.
+
+But in the end, it's really just a matter of aesthetics, I'd get
+accustomed to the latter version eventually :-)
+
+Riccardo
+
+
+From riccardo.murri at gmail.com  Fri Feb 23 13:54:22 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Fri, 23 Feb 2007 13:54:22 +0100
+Subject: [pylit] proposed change: handling of blank lines
+Message-ID: <1c34ba170702230454i58be2cdaucb0566ef41af137a@mail.gmail.com>
+
+Dear G?enther,
+
+here's a proposal to change the blank line handling in PyLit, that, I
+think, could lead to considerable simplification of the code.
+
+Present PyLit behavior: if a blank line occurs between two
+text/documentation blocks, then the two blocks are merged into one::
+
+  [a.py]                  [a.py.txt]                 [a.py]
+
+  # Text1                 Text1                      # Text1
+          == pylit -c ==>           == pylit -t ==>  #       <-- !!
+  # Text2                 Text2                      # Text2
+
+
+My suggestion is: blank lines always stay blank, they are not changed
+by PyLit.  This implies that 1) blank lines are used as *block
+separators*, and 2) PyLit operates at block level: in code2txt mode, a
+block is a text/documentation block iff all lines begin with the
+'comment_string', otherwise it is a code block; in txt2code mode, a
+block is a code block if it is indented and introduced by '::' (as per
+reST syntax), otherwise it is a text block.
+
+Implementing the above behavior is rather trivial for code2txt: there
+would be a main loop of the form (well, this does not include the
+"header" functionality, but it gives the idea...)::
+
+  block = []
+  for line in data:
+      block.append(line)
+      if line.strip():
+        # see if a state transition occurs
+        if not line.startswith(comment_string):
+           state == 'code'
+      else:
+        # blank line encountered, output formatted block
+        if state == 'header':
+           output_header(block)
+        if state == 'text':
+           output_text(block)
+        if state == 'code':
+           output_code(block)
+        # reset block
+        block = []
+
+And the `output_*()` functions are similarly simple::
+
+  def output_text(block):
+      for line in block:
+          # print line with the comment string prefix stripped
+          print line[len(comment_string):]
+
+  def output_code(block):
+      for line in block:
+          # print line indented by 2 spaces
+          print '  ' + line
+
+Most important to me, this would let me throw away nearly half of the
+code for the ELisp filters, and remove the need for the filter-to-core
+signaling (the ugly '\x08'*4 lines...)
+
+Cheers,
+Riccardo
+
+From milde at users.berlios.de  Wed Feb 28 09:49:06 2007
+From: milde at users.berlios.de (G. Milde)
+Date: Wed, 28 Feb 2007 09:49:06 +0100
+Subject: [pylit] proposed change: handling of blank lines
+Message-ID: <20070228084906.GA5716@localhost>
+
+Riccardo Murri wrote on Fri Feb 23:
+
+> Dear G?enter,
+>
+> here's a proposal to change the blank line handling in PyLit, that, I
+> think, could lead to considerable simplification of the code.
+>
+> Present PyLit behavior: if a blank line occurs between two
+> text/documentation blocks, then the two blocks are merged into one::
+>
+>   [a.py]                  [a.py.txt]                 [a.py]
+>
+>   # Text1                 Text1                      # Text1
+>           == pylit -c ==>           == pylit -t ==>  #       <-- !!
+>   # Text2                 Text2                      # Text2
+>
+>
+> My suggestion is: blank lines always stay blank, they are not changed
+> by PyLit.
+
+There is one problem here: the code -> text conversion looses information
+about whether a blank line was commented or not! I.e. there is no way to
+do a distinction between your example and
+
+  # Text1                 Text1                      # Text1
+  #       == pylit -c ==>           == pylit -t ==>  #       <-- :-)
+  # Text2                 Text2                      # Text2
+
+
+(Thus, I have to admit that the statement "both formats of the source
+hold the full information" is not completely true -- at least if you
+regard commenting or not of blank lines as non redundant)
+
+
+Now, we have to decide whether in text -> code conversion blank lines
+should have comments or not, the tested variants were:
+
+* leave blank lines blank -> converts commented-blank to blank
+
+  + Text structure is clearly visible in the code source.
+  
+* comment all lines       -> converts blank to commented blank
+
+  + Text blocks are clearly marked as units that belong together.
+
+* comment if line contains whitespace (other than \n)
+
+  - hidden markup, bad idea
+
+Looks like a matter of taste, so maybe one more option
+"--comment-blank-lines"?
+
+> This implies that
+
+> 1) blank lines are used as *block separators*, and
+
+> 2) PyLit operates at block level: in code2txt mode, a block is a
+> text/documentation block iff all lines begin with the 'comment_string',
+> otherwise it is a code block; in txt2code mode, a block is a code block
+> if it is indented and introduced by '::' (as per reST syntax),
+> otherwise it is a text block.
+
+Actually, this works regardless of the "--comment-blank-lines" setting,
+as the transition between code-block and text-block always requires a
+non-commented blank line.[#]_
+
+.. _[#] Currently, in Text2Code, if there is no blank line after a line
+        ending with ``::``, it is inserted (together with a warning) but
+        this "fixing" feature could also be dismissed.
+
+
+> Implementing the above behavior is rather trivial for Code2Text: 
+
+It wasn't "trivial" considering all the corner cases, but it is in the
+new pylit.py version at SVN.
+
+>   block = []
+>   for line in data:
+>       block.append(line)
+>       if line.strip():
+...
+
+The collecting of lines and the state-test occure now in the __iter__
+method.
+
+>         # blank line encountered, output formatted block
+
+This is done by the state functions::
+
+          yield getattr(self, self.state)()
+
+...
+>           print line[len(comment_string):]
+
+The state handlers do not `print` but return the list of lines.
+
+This way:
+
+* Iterating over a `Code2Text` instance yields a sequence of converted
+  blocks (all with a trailing blank line).
+  
+  `Code2Text`.state can be checked to see whether the block is "header",
+  "text" or "code".
+  
+* Calling an `Code2Text` instance calls `__call__` which returns a list
+  of converted blocks.
+  
+  There is no way to tell wich blocks are text or code (short of a new
+  parsing).
+  
+  (The `__call__` method is defined in the parent `Simplestates` class.
+  It can easily be overwritten to include some input or output filters).
+  
+  Maybe it would be better if it returned a flat list of lines instead?
+
+  
+* ``str(Code2Text(data))`` calls the `__str__` method that returns the
+  converted document as string.
+
+
+Some things that made life complicated: 
+
+* We still need to care for commented blank lines with comment string
+  without trailing whitespace...
+
+* One problem is the auto append of the code-block marker to the text
+  block. IMO this is an important feature for conversion of "still
+  iliterate" code to literate one. (Import of code files, so to say.)
+
+* The `--strip` option: with the approach in version 0.2.8 it is always
+  determined in which order the blocks are returned -- code and text blocks
+  alternate.
+  
+  Now the strip option is catered for by conditionals again.
+
+> Most important to me, this would let me throw away nearly half of the
+> code for the ELisp filters, and remove the need for the filter-to-core
+> signaling (the ugly '\x08'*4 lines...)
+
+Could you explain your problem with the ELisp filters a bit more detailled?
+Maybe we could find and define a convenient API (tentative first).
+
+Thanks
+
+G?nter
+
+
+

@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit-users] how to handle initial file header?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C1c34ba170702051628oac25123pfae3b487f0f3f410%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000003.html">
+   <LINK REL="Next"  HREF="000005.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit-users] how to handle initial file header?</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C1c34ba170702051628oac25123pfae3b487f0f3f410%40mail.gmail.com%3E"
+       TITLE="[pylit-users] how to handle initial file header?">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Tue Feb  6 01:28:07 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000003.html">[pylit-users] how to handle initial file header?
+</A></li>
+        <LI>Next message: <A HREF="000005.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 2/6/07, Riccardo Murri &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">riccardo.murri at gmail.com</A>&gt; wrote:
+&gt;<i> On 1/31/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">milde at users.berlios.de</A>&gt; wrote:
+</I>&gt;<i> &gt; (I do not really like the additional indent of the first line, however
+</I>&gt;<i> &gt; ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+</I>&gt;<i> &gt; Increasing the indent of all code parts is possible but makes bad use of
+</I>&gt;<i> &gt; available line space. And for Python users the problem is familiar from
+</I>&gt;<i> &gt; long string literals like::
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   s = &quot;&quot;&quot;first line
+</I>&gt;<i> &gt;   second line
+</I>&gt;<i> &gt;   &quot;&quot;&quot;
+</I>&gt;<i> &gt; )
+</I>&gt;<i>
+</I>&gt;<i> PyLit could add two spaces &quot;  &quot; to all the lines in the header except the
+</I>&gt;<i> first one (in code2txt), and remove them in txt2code; this would align
+</I>&gt;<i> all lines in the converted header, while maintaing the comment block
+</I>&gt;<i> within correct reST syntax.
+</I>&gt;<i>
+</I>
+Please find a patch attached against pylit.py (of SVN rev 13) to
+implement this functionality.  I have only tested it on the attached
+sample file.
+
+Ciao,
+Riccardo
+-------------- next part --------------
+--- pylit.py.orig	2007-02-05 21:38:15.000000000 +0100
++++ pylit.py	2007-02-06 01:22:39.000000000 +0100
+@@ -260,10 +260,22 @@
+ 
+         if line.startswith(&quot;..&quot;):
+             
+-# Strip leading comment string (typically added by `Code2Text.header`) and
+-# return the result of processing the data with the code handler::
+-
+-            self.data_iterator.push(line.replace(&quot;..&quot;, &quot;&quot;, 1))
++# Strip the leading two characters of each line in the header block
++# (this undoes any rst comment block marker and indent added by
++# `Code2Text.header`) and return the result of processing the data
++# with the code handler::
++            
++            lines = [ line[2:] ]
++            # read until first blank line, appending stripped line to
++            # a temporary array
++            for line in self.data_iterator:
++                lines.append(line[2:])
++                if &quot;&quot; == line.lstrip():
++                    break
++            # push stripped lines back into data_iterator
++            lines.reverse()
++            for line in lines:
++                self.data_iterator.push(line)
+             return self.code()
+         
+ # No header code found: Push back first non-header line and set state to
+@@ -471,7 +483,7 @@
+ # If we want to keep the line numbers in sync for text and code source, the
+ # reStructured Text markup for these header lines must start at the same line
+ # as the first header line. Therfore, header lines could not be marked as
+-# literal block (this would require the &quot;::&quot; and an empty line above the code).
++# literal block (this would require the ``::`` and an empty line above the code).
+ # 
+ # OTOH, a comment may start at the same line as the comment marker and it
+ # includes subsequent indented lines. Comments are visible in the reStructured
+@@ -518,13 +530,17 @@
+             self.state = &quot;text&quot;
+             return []
+ 
+-# Leading code detected: handle with the `code` method and prepend a rst
+-# comment marker to the first line. (One could be even more flexible by
+-# storing the &quot;header-marker-string&quot; in a class data argument.) ::
++# Leading code detected: handle with the `code` method and prepend a
++# rst comment marker to the first line (one could be even more
++# flexible by storing the &quot;header-marker-string&quot; in a class data
++# argument), and indent all subsequent lines by two spaces::
+ 
+         lines = self.code()
+         if lines:
+             lines[0] = &quot;..&quot; + lines[0]
++            def prepend_two_spaces(s):
++                return &quot;  &quot;+s
++            lines[1:] = map(prepend_two_spaces, lines[1:]) 
+         return lines
+             
+             
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: 99bottles.py
+Type: text/x-python
+Size: 645 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/pylit-users/attachments/20070206/77bb3612/attachment.py">https://lists.berlios.de/pipermail/pylit-users/attachments/20070206/77bb3612/attachment.py</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000003.html">[pylit-users] how to handle initial file header?
+</A></li>
+	<LI>Next message: <A HREF="000005.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

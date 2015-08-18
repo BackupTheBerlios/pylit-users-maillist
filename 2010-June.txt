@@ -1,0 +1,71 @@
+From jeandaniel.browne at gmail.com  Mon Jun 21 15:33:33 2010
+From: jeandaniel.browne at gmail.com (Jean Daniel)
+Date: Mon, 21 Jun 2010 15:33:33 +0200
+Subject: [pylit] a different structure for the code and for the article?
+Message-ID: <AANLkTilaXY48_XNTBisZX723Zo_w2PeB9V7Ufg68iAQK@mail.gmail.com>
+
+Hello,
+
+Discovering the features of Pylit, I ran into three questions. Someone
+might be able to offer a solution or a work around:
+
+1. I have a code with glue/boilerplate function and I wish they would
+not appear in the article. I would like the article to only show a
+subset of the classes and function present in the code. Is it possible
+(especially considering the "dual source" choice and the round trip
+conversion)?
+
+2. Can Pylit re-use function docstrings which are already formatted as
+restructured text or docstrings are always presented verbatim?
+
+3. I have a functional code with three functions: two are primitives
+to be used by the third function. This structure does not appear in
+the code (they are all module functions), but I wish the function
+would appear in a numbered list in the article. Is it actually
+possible to have a structure of the article a bit different than the
+code structure?
+
+In the source code :
+"""
+# 1. function one
+#    ::
+
+deps       = lambda :1+1
+
+#    More information on function 1
+
+# 2. function two
+#    ::
+
+are_before = lambda : 2*3
+
+# Now the higher level function, built on the previous primitives:
+
+search     = lambda : deps(),are_before()
+"""
+
+I can not make this code generate the correct restructured text
+source, which would be
+
+"""
+1. function one
+___::
+
+_____deps = lambda :1+1
+
+___More information on function 1
+
+2. function two
+___::
+
+_____are_before = lambda : 2*3
+
+___Now the higher level function, built on the previous primitives:
+
+search     = lambda : deps(),are_before()
+"""
+(Blank spaces represented as underscore)
+
+Thank you in advance,
+
+

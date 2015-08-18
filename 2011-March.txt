@@ -1,0 +1,258 @@
+From william at whpiv.net  Wed Mar  2 23:44:24 2011
+From: william at whpiv.net (Bill Purcell)
+Date: Wed, 2 Mar 2011 16:44:24 -0600
+Subject: [pylit] code_block_marker options
+Message-ID: <20110302164424.000050ab@unknown>
+
+I would like to add options to my code_block_marker.  For example I
+would like to support the following
+
+# .. mycodeblockdirective::
+#    :someargument: value
+
+x = 1
+
+From looking at the PyLit code it seems that the code_block_marker is
+an arbitrary regex and it can support just about anything except
+multiple lines.  Is this correct?  Would PyLit be interested in
+supporting more complex code_block_markers?
+
+Bill
+
+
+From william at whpiv.net  Wed Mar  9 04:29:46 2011
+From: william at whpiv.net (Bill Purcell)
+Date: Tue, 8 Mar 2011 21:29:46 -0600
+Subject: [pylit] code_block_marker options
+In-Reply-To: <20110307233818.GA3114@heinz.local>
+References: <20110302164424.000050ab@unknown>
+	<20110307233818.GA3114@heinz.local>
+Message-ID: <20110308212946.000054e1@unknown>
+
+On Tue, 8 Mar 2011 00:38:18 +0100
+Guenter Milde <g.milde at quantentunnel.de> wrote:
+
+> On  2.03.11, Bill Purcell wrote:
+> > I would like to add options to my code_block_marker.  For example I
+> > would like to support the following
+> 
+> > # .. mycodeblockdirective::
+> > #    :someargument: value
+> 
+> > x = 1
+> 
+> While this looks like a valid directive syntax (if converted to rst), 
+> I never came across such an example.
+>
+> Did you implement such a directive? Does it work? What is the use
+> case? Could this be done with an argument instead of an option
+
+I have implemented such a directive.  I have called it the py
+directive.  I spent some time and pulled it out of a personal repo and
+put it in something I could share [1]. This directive executes the
+python code within the directive and tries to output it cleanly either
+as an equation or as a code block.  A namespace is shared across all
+directives.  I have been using this for engineering calculations at
+work for a couple years (this combined with python-quantities makes
+for a pretty powerful tool ... kind of like MathCAD). (Not this exact
+version but one similar). Anyway, it supports things like
+
+.. py::
+
+   y = 1
+
+.. py::
+   :showsource:
+
+   x = 5/y
+
+will output
+
+y = 1
+
+in one equation and 
+
+x & =  5 \frac{1}{y}\\
+  & =  5 \\
+
+in the second equation.  PyLit would come into play when I want to keep
+my primary calculation files in a python file, execute it with print
+statements and then generate a report later using PyLit to go from
+python to rst and using my directive to execute the report and make
+clean math.
+ 
+> > Would PyLit be interested in supporting more complex
+> > code_block_markers?
+> 
+> My interest in PyLit is to get a simple and elegant program, so I
+> would rather not make things more complex just for the sake of
+> completeness.
+> 
+> On the other hand, PyLit shall be a usefull tool, so if there is a
+> valid user case we can try to get this done "the right way".
+
+I have implemented a work around in a front end I use for processing my
+calculation files [2].  I use a preprocessor to combine all the
+directive options into the directive line and then a postprocessor to
+extract them back out of the directive line.
+
+I can imagine other situations where a user might want to have the
+lines numbered in the code blocks.  Supporting directive options would
+allow a user to do something like 
+
+# .. code_block:: python
+#    :linenos:
+
+for i in range(5):
+    print i
+
+I don't know if this is enticing enough for you to make your code more
+complex though.  
+
+Aside from all this, I have found a work around and appreciate a clean
+and efficient tool to work with.
+
+- Bill
+
+P.S. Please excuse my code if you download it.  I need to tidy things
+up.
+P.S.S. This code executes dynamically so please be careful.  I don't
+want to be accused of messing something up on your computer ;).
+
+[1] git clone git://git.whpiv.net/py_directive.git
+[2] git clone git://git.whpiv.net/pyrst.git
+
+
+From milde at users.berlios.de  Mon Mar 28 11:57:22 2011
+From: milde at users.berlios.de (Guenter Milde)
+Date: Mon, 28 Mar 2011 11:57:22 +0200
+Subject: [pylit] code_block_marker options
+In-Reply-To: <20110308212946.000054e1@unknown>
+References: <20110302164424.000050ab@unknown>
+	<20110307233818.GA3114@heinz.local>
+	<20110308212946.000054e1@unknown>
+Message-ID: <20110328095722.GB3148@heinz.local>
+
+On  8.03.11, Bill Purcell wrote:
+> On Tue, 8 Mar 2011 00:38:18 +0100
+> Guenter Milde <g.milde at quantentunnel.de> wrote:
+
+> > On  2.03.11, Bill Purcell wrote:
+> > > I would like to add options to my code_block_marker.  For example I
+> > > would like to support the following
+> > 
+> > > # .. mycodeblockdirective::
+> > > #    :someargument: value
+> > 
+> > > x = 1
+> > 
+> > While this looks like a valid directive syntax (if converted to rst), 
+> > I never came across such an example.
+> >
+> > Did you implement such a directive? Does it work? What is the use
+> > case? Could this be done with an argument instead of an option
+
+> I have implemented such a directive. 
+
+...
+
+> I can imagine other situations where a user might want to have the
+> lines numbered in the code blocks.  Supporting directive options would
+> allow a user to do something like 
+
+> # .. code_block:: python
+> #    :linenos:
+
+> for i in range(5):
+>     print i
+
+> I don't know if this is enticing enough for you to make your code more
+> complex though.  
+
+You convinced me that allowing for directive options in PyLit is a
+worthwhile improvement.
+
+Now I only need to find the time to do this.
+
+G?nter
+
+
+From william at whpiv.net  Tue Mar 29 02:30:39 2011
+From: william at whpiv.net (Bill Purcell)
+Date: Mon, 28 Mar 2011 19:30:39 -0500
+Subject: [pylit] code_block_marker options
+In-Reply-To: <20110328095722.GB3148@heinz.local>
+References: <20110302164424.000050ab@unknown>
+	<20110307233818.GA3114@heinz.local>
+	<20110308212946.000054e1@unknown>
+	<20110328095722.GB3148@heinz.local>
+Message-ID: <20110328193039.000002fb@unknown>
+
+On Mon, 28 Mar 2011 11:57:22 +0200
+Guenter Milde <milde at users.berlios.de> wrote:
+> You convinced me that allowing for directive options in PyLit is a
+> worthwhile improvement.
+> 
+> Now I only need to find the time to do this.
+
+That is good news.  Let me know if you make the changes.  If I get a
+chance before you, I will provide a patch.
+
+- Bill
+
+
+From milde at users.berlios.de  Tue Mar 29 08:49:17 2011
+From: milde at users.berlios.de (Guenter Milde)
+Date: Tue, 29 Mar 2011 08:49:17 +0200
+Subject: [pylit] code_block_marker options
+In-Reply-To: <20110328193039.000002fb@unknown>
+References: <20110302164424.000050ab@unknown>
+	<20110307233818.GA3114@heinz.local>
+	<20110308212946.000054e1@unknown>
+	<20110328095722.GB3148@heinz.local>
+	<20110328193039.000002fb@unknown>
+Message-ID: <20110329064917.GA3285@heinz.local>
+
+On 28.03.11, Bill Purcell wrote:
+> On Mon, 28 Mar 2011 11:57:22 +0200
+> Guenter Milde <milde at users.berlios.de> wrote:
+
+> > You convinced me that allowing for directive options in PyLit is a
+> > worthwhile improvement.
+> > 
+> > Now I only need to find the time to do this.
+
+> That is good news.  Let me know if you make the changes.  If I get a
+> chance before you, I will provide a patch.
+
+It's done and commited to SVN. Please give it a try.
+
+G?nter
+
+
+From william at whpiv.net  Tue Mar 29 17:52:42 2011
+From: william at whpiv.net (Bill Purcell)
+Date: Tue, 29 Mar 2011 10:52:42 -0500
+Subject: [pylit] code_block_marker options
+In-Reply-To: <20110329064917.GA3285@heinz.local>
+References: <20110302164424.000050ab@unknown>
+	<20110307233818.GA3114@heinz.local>
+	<20110308212946.000054e1@unknown>
+	<20110328095722.GB3148@heinz.local>
+	<20110328193039.000002fb@unknown>
+	<20110329064917.GA3285@heinz.local>
+Message-ID: <4D92004A.8050002@whpiv.net>
+
+On 3/29/2011 1:49 AM, Guenter Milde wrote:
+> It's done and commited to SVN. Please give it a try.
+
+I think I'm missing something.  I checked berlios and the current 
+pylit.py last modified date is 2010-06-23 15:08:18.
+The version is 0.7.7.  I went to 
+http://svn.berlios.de/wsvn/pylit/trunk/src/?#a116ec19b563e12d601c66123fb6fda96.  
+I assume that I am not going to the right place?  Where can I find your 
+update?
+
+Bill
+
+

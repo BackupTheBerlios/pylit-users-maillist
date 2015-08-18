@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit] proposed change: handling of blank lines
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20proposed%20change%3A%20handling%20of%20blank%20lines&In-Reply-To=%3C20070228084906.GA5716%40localhost%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000008.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit] proposed change: handling of blank lines</H1>
+    <B>G. Milde</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20proposed%20change%3A%20handling%20of%20blank%20lines&In-Reply-To=%3C20070228084906.GA5716%40localhost%3E"
+       TITLE="[pylit] proposed change: handling of blank lines">milde at users.berlios.de
+       </A><BR>
+    <I>Wed Feb 28 09:49:06 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000008.html">[pylit] proposed change: handling of blank lines
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#9">[ date ]</a>
+              <a href="thread.html#9">[ thread ]</a>
+              <a href="subject.html#9">[ subject ]</a>
+              <a href="author.html#9">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Riccardo Murri wrote on Fri Feb 23:
+
+&gt;<i> Dear G&#252;enter,
+</I>&gt;<i>
+</I>&gt;<i> here's a proposal to change the blank line handling in PyLit, that, I
+</I>&gt;<i> think, could lead to considerable simplification of the code.
+</I>&gt;<i>
+</I>&gt;<i> Present PyLit behavior: if a blank line occurs between two
+</I>&gt;<i> text/documentation blocks, then the two blocks are merged into one::
+</I>&gt;<i>
+</I>&gt;<i>   [a.py]                  [a.py.txt]                 [a.py]
+</I>&gt;<i>
+</I>&gt;<i>   # Text1                 Text1                      # Text1
+</I>&gt;<i>           == pylit -c ==&gt;           == pylit -t ==&gt;  #       &lt;-- !!
+</I>&gt;<i>   # Text2                 Text2                      # Text2
+</I>&gt;<i>
+</I>&gt;<i>
+</I>&gt;<i> My suggestion is: blank lines always stay blank, they are not changed
+</I>&gt;<i> by PyLit.
+</I>
+There is one problem here: the code -&gt; text conversion looses information
+about whether a blank line was commented or not! I.e. there is no way to
+do a distinction between your example and
+
+  # Text1                 Text1                      # Text1
+  #       == pylit -c ==&gt;           == pylit -t ==&gt;  #       &lt;-- :-)
+  # Text2                 Text2                      # Text2
+
+
+(Thus, I have to admit that the statement &quot;both formats of the source
+hold the full information&quot; is not completely true -- at least if you
+regard commenting or not of blank lines as non redundant)
+
+
+Now, we have to decide whether in text -&gt; code conversion blank lines
+should have comments or not, the tested variants were:
+
+* leave blank lines blank -&gt; converts commented-blank to blank
+
+  + Text structure is clearly visible in the code source.
+  
+* comment all lines       -&gt; converts blank to commented blank
+
+  + Text blocks are clearly marked as units that belong together.
+
+* comment if line contains whitespace (other than \n)
+
+  - hidden markup, bad idea
+
+Looks like a matter of taste, so maybe one more option
+&quot;--comment-blank-lines&quot;?
+
+&gt;<i> This implies that
+</I>
+&gt;<i> 1) blank lines are used as *block separators*, and
+</I>
+&gt;<i> 2) PyLit operates at block level: in code2txt mode, a block is a
+</I>&gt;<i> text/documentation block iff all lines begin with the 'comment_string',
+</I>&gt;<i> otherwise it is a code block; in txt2code mode, a block is a code block
+</I>&gt;<i> if it is indented and introduced by '::' (as per reST syntax),
+</I>&gt;<i> otherwise it is a text block.
+</I>
+Actually, this works regardless of the &quot;--comment-blank-lines&quot; setting,
+as the transition between code-block and text-block always requires a
+non-commented blank line.[#]_
+
+.. _[#] Currently, in Text2Code, if there is no blank line after a line
+        ending with ``::``, it is inserted (together with a warning) but
+        this &quot;fixing&quot; feature could also be dismissed.
+
+
+&gt;<i> Implementing the above behavior is rather trivial for Code2Text: 
+</I>
+It wasn't &quot;trivial&quot; considering all the corner cases, but it is in the
+new pylit.py version at SVN.
+
+&gt;<i>   block = []
+</I>&gt;<i>   for line in data:
+</I>&gt;<i>       block.append(line)
+</I>&gt;<i>       if line.strip():
+</I>...
+
+The collecting of lines and the state-test occure now in the __iter__
+method.
+
+&gt;<i>         # blank line encountered, output formatted block
+</I>
+This is done by the state functions::
+
+          yield getattr(self, self.state)()
+
+...
+&gt;<i>           print line[len(comment_string):]
+</I>
+The state handlers do not `print` but return the list of lines.
+
+This way:
+
+* Iterating over a `Code2Text` instance yields a sequence of converted
+  blocks (all with a trailing blank line).
+  
+  `Code2Text`.state can be checked to see whether the block is &quot;header&quot;,
+  &quot;text&quot; or &quot;code&quot;.
+  
+* Calling an `Code2Text` instance calls `__call__` which returns a list
+  of converted blocks.
+  
+  There is no way to tell wich blocks are text or code (short of a new
+  parsing).
+  
+  (The `__call__` method is defined in the parent `Simplestates` class.
+  It can easily be overwritten to include some input or output filters).
+  
+  Maybe it would be better if it returned a flat list of lines instead?
+
+  
+* ``str(Code2Text(data))`` calls the `__str__` method that returns the
+  converted document as string.
+
+
+Some things that made life complicated: 
+
+* We still need to care for commented blank lines with comment string
+  without trailing whitespace...
+
+* One problem is the auto append of the code-block marker to the text
+  block. IMO this is an important feature for conversion of &quot;still
+  iliterate&quot; code to literate one. (Import of code files, so to say.)
+
+* The `--strip` option: with the approach in version 0.2.8 it is always
+  determined in which order the blocks are returned -- code and text blocks
+  alternate.
+  
+  Now the strip option is catered for by conditionals again.
+
+&gt;<i> Most important to me, this would let me throw away nearly half of the
+</I>&gt;<i> code for the ELisp filters, and remove the need for the filter-to-core
+</I>&gt;<i> signaling (the ugly '\x08'*4 lines...)
+</I>
+Could you explain your problem with the ELisp filters a bit more detailled?
+Maybe we could find and define a convenient API (tentative first).
+
+Thanks
+
+G&#252;nter
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000008.html">[pylit] proposed change: handling of blank lines
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#9">[ date ]</a>
+              <a href="thread.html#9">[ thread ]</a>
+              <a href="subject.html#9">[ subject ]</a>
+              <a href="author.html#9">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

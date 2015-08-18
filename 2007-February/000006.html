@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit-users] how to handle initial file header?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C20070206145155.GB18035%40localhost%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000005.html">
+   <LINK REL="Next"  HREF="000007.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit-users] how to handle initial file header?</H1>
+    <B>G. Milde</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C20070206145155.GB18035%40localhost%3E"
+       TITLE="[pylit-users] how to handle initial file header?">milde at users.berlios.de
+       </A><BR>
+    <I>Tue Feb  6 15:51:55 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000005.html">[pylit-users] how to handle initial file header?
+</A></li>
+        <LI>Next message: <A HREF="000007.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#6">[ date ]</a>
+              <a href="thread.html#6">[ thread ]</a>
+              <a href="subject.html#6">[ subject ]</a>
+              <a href="author.html#6">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On  6.02.07, Riccardo Murri wrote:
+
+&gt;<i> sorry for the long delay in answering - I've had a very busy week...
+</I>
+Nice to hear from you again.
+
+&gt;<i> On 1/31/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">milde at users.berlios.de</A>&gt; wrote:
+</I>&gt;<i> &gt; On 29.01.07, Riccardo Murri wrote:
+</I>&gt;<i> &gt; &gt; On 1/25/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">g.milde at quantentunnel.de</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; &gt; On 24.01.07, Riccardo Murri wrote:
+</I>&gt;<i> &gt; &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; &gt; It seems to me that there is a general need for similar header
+</I>&gt;<i> &gt; &gt; &gt; &gt; processing, in almost any programming language
+</I>...
+
+&gt;<i> &gt; If we want to keep the line numbers in sync for text and code source, the
+</I>&gt;<i> &gt; reStructured Text markup for these header lines must start at the same line
+</I>&gt;<i> &gt; as the first header line. Therfore, header lines could not be marked as
+</I>&gt;<i> &gt; literal block (this would require the &quot;::&quot; and an empty line above the code).
+</I>
+&gt;<i> Mapping the file header as a comment is ok IMHO; indeed, keeping the
+</I>&gt;<i> line numbers in sync for text and code source can be a great aid when
+</I>&gt;<i> debugging L.P. code.
+</I>
+(And vital for the --doctest option that works on the text-source. This
+is why I removed the removal of lonely ``::``-s from the code source.)
+
+&gt;<i> (And I see from the source that there might be an option in the future
+</I>&gt;<i> to map the header to a user-specified reST directive.)
+</I>
+(Which will make the indentation issue more complicated, as with a
+configurable `header_prefix` attribute, the additional indent of the
+first line is not always 2 but len(header_prefix).
+
+The nice thing is, that a directive allows text starting on the same line
+as well.
+
+&gt;<i> &gt; - it may come as surprise if a part of the file is not &quot;printed&quot;,
+</I>&gt;<i> &gt; - one more syntax element to learn for rst newbees to start with pylit,
+</I>&gt;<i> &gt;   (however, starting from the code source, this will be auto-generated)
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; In the case that there is no matching comment at all, the complete code
+</I>&gt;<i> &gt; source will become a comment -- however, in this case it is not very likely
+</I>&gt;<i> &gt; the source is a literate document.
+</I>&gt;<i> &gt;
+</I>
+&gt;<i> Hmm, this already fooled me on the very first example I tried: 
+</I>
+Sorry for this. I plan to extend the tutorial to cover the case of
+&quot;attached&quot; or &quot;minor&quot; comments. 
+
+So, actually, a PyLit novice needs to know at least three rst syntax
+elements:
+
+* literal blocks
+* comment (for the header)
+* paragraph separator (blank line) (i.e. whitespace only: &quot;^[ \t]*$&quot;)
+
+&gt;<i> I started by drafting some Python code and then trying to use PyLit to
+</I>&gt;<i> turn it into a reST document for adding L.P. documentation.
+</I>
+This is how I imagine the &quot;normal&quot; use of pylit.
+
+&gt;<i> Although this might justly regarded as a corner case, it may confuse
+</I>&gt;<i> novices (like I am); it should be clearly stated in the documentation
+</I>&gt;<i> that a documentation paragraph should *separate* the header from the
+</I>&gt;<i> code (meaning, there should be a block, preceded and followed by an
+</I>&gt;<i> empty line, all whose lines match the doc comment string).
+</I>
+Actually, the case to be documented is the separation of text and code
+blocks (or chunks or paragraphs). The leading code block to become a
+header (and rst comment) is just a special case but the logic to separate
+it from a text block is the same as further down.
+
+As said above, I plan to spent a section in the tutorial on this example.
+May I copy your example to the tutorial? (And the
+99bottles.py to the examples?)
+
+&gt;<i> &gt; (I do not really like the additional indent of the first line, however
+</I>&gt;<i> &gt; ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+</I>
+&gt;<i> PyLit could add two spaces &quot;  &quot; to all the lines in the header except the
+</I>&gt;<i> first one (in code2txt), and remove them in txt2code; this would align
+</I>&gt;<i> all lines in the converted header, while maintaing the comment block
+</I>&gt;<i> within correct reST syntax.
+</I>
+Unfortunately, this would only move the problem further down. As (in
+order to satisfy the Python &quot;indentation consistency&quot; requirement) PyLit
+will use the indentation of the first &quot;code&quot; line as base for all code
+line indents, it is at least as strange to see::
+
+  ..  #!/usr/bin/env python
+      #
+      # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+      # 
+     
+  This is an introductory example to literate programming::
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+  
+with the inconsistency between the two first code blocks as it is to see::
+
+  ..  #!/usr/bin/env python
+    #
+    # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+    #
+     
+  This is an introductory example to literate programming::
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+
+with the inconsistent indent confined to the very first line. Actually, I
+find the latter even less intrusive.
+
+This becomes really an issue with e.g.::
+
+  .. pylit_header:: #!/usr/bin/env python
+                    #
+                    # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+                    #
+
+
+Thanks
+
+G&#252;nter
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000005.html">[pylit-users] how to handle initial file header?
+</A></li>
+	<LI>Next message: <A HREF="000007.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#6">[ date ]</a>
+              <a href="thread.html#6">[ thread ]</a>
+              <a href="subject.html#6">[ subject ]</a>
+              <a href="author.html#6">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

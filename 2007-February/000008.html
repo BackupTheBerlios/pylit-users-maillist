@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit] proposed change: handling of blank lines
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20proposed%20change%3A%20handling%20of%20blank%20lines&In-Reply-To=%3C1c34ba170702230454i58be2cdaucb0566ef41af137a%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000007.html">
+   <LINK REL="Next"  HREF="000009.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit] proposed change: handling of blank lines</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20proposed%20change%3A%20handling%20of%20blank%20lines&In-Reply-To=%3C1c34ba170702230454i58be2cdaucb0566ef41af137a%40mail.gmail.com%3E"
+       TITLE="[pylit] proposed change: handling of blank lines">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Fri Feb 23 13:54:22 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000007.html">[pylit-users] how to handle initial file header?
+</A></li>
+        <LI>Next message: <A HREF="000009.html">[pylit] proposed change: handling of blank lines
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Dear G&#252;enther,
+
+here's a proposal to change the blank line handling in PyLit, that, I
+think, could lead to considerable simplification of the code.
+
+Present PyLit behavior: if a blank line occurs between two
+text/documentation blocks, then the two blocks are merged into one::
+
+  [a.py]                  [a.py.txt]                 [a.py]
+
+  # Text1                 Text1                      # Text1
+          == pylit -c ==&gt;           == pylit -t ==&gt;  #       &lt;-- !!
+  # Text2                 Text2                      # Text2
+
+
+My suggestion is: blank lines always stay blank, they are not changed
+by PyLit.  This implies that 1) blank lines are used as *block
+separators*, and 2) PyLit operates at block level: in code2txt mode, a
+block is a text/documentation block iff all lines begin with the
+'comment_string', otherwise it is a code block; in txt2code mode, a
+block is a code block if it is indented and introduced by '::' (as per
+reST syntax), otherwise it is a text block.
+
+Implementing the above behavior is rather trivial for code2txt: there
+would be a main loop of the form (well, this does not include the
+&quot;header&quot; functionality, but it gives the idea...)::
+
+  block = []
+  for line in data:
+      block.append(line)
+      if line.strip():
+        # see if a state transition occurs
+        if not line.startswith(comment_string):
+           state == 'code'
+      else:
+        # blank line encountered, output formatted block
+        if state == 'header':
+           output_header(block)
+        if state == 'text':
+           output_text(block)
+        if state == 'code':
+           output_code(block)
+        # reset block
+        block = []
+
+And the `output_*()` functions are similarly simple::
+
+  def output_text(block):
+      for line in block:
+          # print line with the comment string prefix stripped
+          print line[len(comment_string):]
+
+  def output_code(block):
+      for line in block:
+          # print line indented by 2 spaces
+          print '  ' + line
+
+Most important to me, this would let me throw away nearly half of the
+code for the ELisp filters, and remove the need for the filter-to-core
+signaling (the ugly '\x08'*4 lines...)
+
+Cheers,
+Riccardo
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000007.html">[pylit-users] how to handle initial file header?
+</A></li>
+	<LI>Next message: <A HREF="000009.html">[pylit] proposed change: handling of blank lines
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

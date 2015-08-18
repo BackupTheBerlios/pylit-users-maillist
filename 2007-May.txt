@@ -1,0 +1,90 @@
+From riccardo.murri at gmail.com  Mon May 14 15:23:27 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Mon, 14 May 2007 15:23:27 +0200
+Subject: [pylit] processing emacs lisp files with PyLit
+In-Reply-To: <20070302104714.GA11325@localhost>
+References: <1c34ba170702090130j6f8e344tb31fbac23f817f4@mail.gmail.com>
+	<20070219100341.GA12333@localhost>
+	<1c34ba170702201907j4db79ae3vecd31ffe39af0f22@mail.gmail.com>
+	<1c34ba170702211039n51cfda3bv5da0a43a9c84e477@mail.gmail.com>
+	<20070302104714.GA11325@localhost>
+Message-ID: <1c34ba170705140623s4a641c99i375221033ad3a1fd@mail.gmail.com>
+
+Dear Guenther,
+
+I'm very sorry for my long silence - in the past months I have moved
+to a new town and started a new job, and this has disconnected me from
+the internet and all activity for a long while...
+
+However, now I'm back and so here's a cleaner patch for ELisp support.
+The code is much simpler than my first attempt, thanks to your
+suggestions.
+
+Three files are attached to this email:
+      - patch against `pylit.py` (SVN rev 44)
+      - new files `src/filters.py` and `test/test_filters.py`
+
+A few refinements could be done on filters.py and test_filters is very
+rough, but it's working now, and it makes a good release candidate
+IMHO.
+
+
+What is in the patch:
+
+  - The PyLitConverter interface has been slightly changed, adding
+    `iterlines` and `iterblocks` methods, so that Filters and
+    Converters can be chained, and a filter/converter can use another
+    filter/converter as a `data` source.  By default, `__iter__` ==
+    `iterblocks` for compatiblity with the old code (but I think it's
+    not used anymore).
+
+    The `iterlines` method's purpose is twofold:
+
+      1) since the ElispText2Code filter will process pylit.Text2Code
+         *output*, a system is needed to get PyLit output one line at
+         a time;
+
+      2) it is overridden in filter classes to perform actual
+         substitution in lines -- this is the only method that filters
+         classes need to override.
+
+    The `iterblocks` method is the old Text2Code and Code2Text
+    `__iter__` method.
+
+  - The chain of filters/converters is built in the `get_converter()`
+    function: a new keyword arg "filters" holds a list of filters:
+    Text2Code (resp. Code2Text) is added as the last (resp. first)
+    element of the chain.
+
+  - filters.py defines a `by_language` dictionary, that associates a
+    list of filters with a language name.
+
+    A similar `by_name` dictionary could be used to provide the user
+    with a ``--filter`` option to select the wanted filters:
+    ``--filter=FOO`` would chain filters in `by_name{FOO}`.  I haven't
+    coded this yet.
+
+Cheers,
+Riccardo
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: elisp.r44.diff
+Type: text/x-patch
+Size: 5177 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment.bin>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: filters.py
+Type: text/x-python
+Size: 7912 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment.py>
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: test_filters.py
+Type: text/x-python
+Size: 4104 bytes
+Desc: not available
+URL: <https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment-0001.py>
+

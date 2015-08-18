@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit-users] how to handle initial file header?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-February/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C1c34ba170702051542g2b004545vad7f867202020956%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000004.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit-users] how to handle initial file header?</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C1c34ba170702051542g2b004545vad7f867202020956%40mail.gmail.com%3E"
+       TITLE="[pylit-users] how to handle initial file header?">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Tue Feb  6 00:42:02 CET 2007</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000004.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Hello,
+
+sorry for the long delay in answering - I've had a very busy week...
+
+
+On 1/31/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">milde at users.berlios.de</A>&gt; wrote:
+&gt;<i> On 29.01.07, Riccardo Murri wrote:
+</I>&gt;<i> &gt; On 1/25/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">g.milde at quantentunnel.de</A>&gt; wrote:
+</I>&gt;<i> &gt; &gt; On 24.01.07, Riccardo Murri wrote:
+</I>&gt;<i> &gt; &gt; &gt;
+</I>&gt;<i> &gt; &gt; &gt; It seems to me that there is a general need for similar header
+</I>&gt;<i> &gt; &gt; &gt; processing, in almost any programming language: every source file that
+</I>&gt;<i> &gt; &gt; &gt; is likely to be publicly available on the web will carry copyright and
+</I>&gt;<i> &gt; &gt; &gt; licence information at the start of the file, at a minimum.
+</I>&gt;<i> ...
+</I>&gt;<i>
+</I>&gt;<i> &gt; &gt; &gt; it would be nice to extend PyLit so that it can translate all
+</I>&gt;<i> &gt; &gt; &gt; the &quot;leading portion&quot; of a file to reST comments.
+</I>&gt;<i>
+</I>&gt;<i> &gt; &gt; &gt; A criterion could be: everything from the start of the file to the
+</I>&gt;<i> &gt; &gt; &gt; first blank line is turned into a reST comment.
+</I>&gt;<i>
+</I>&gt;<i> How about
+</I>&gt;<i>
+</I>&gt;<i> * any code that appears before the first text block is translated to a rst
+</I>&gt;<i>   comment?
+</I>&gt;<i>
+</I>&gt;<i> If we want to keep the line numbers in sync for text and code source, the
+</I>&gt;<i> reStructured Text markup for these header lines must start at the same line
+</I>&gt;<i> as the first header line. Therfore, header lines could not be marked as
+</I>&gt;<i> literal block (this would require the &quot;::&quot; and an empty line above the code).
+</I>&gt;<i>
+</I>
+Mapping the file header as a comment is ok IMHO; indeed, keeping the
+line numbers in sync for text and code source can be a great aid when
+debugging L.P. code.
+
+(And I see from the source that there might be an option in the future
+to map the header to a user-specified reST directive.)
+
+
+&gt;<i> OTOH, a *comment* may start at the same line as the comment marker and it
+</I>&gt;<i> includes subsequent indented lines. Comments are visible in the reStructured
+</I>&gt;<i> Text source but hidden in the pretty-printed output.
+</I>&gt;<i>
+</I>&gt;<i> With a header converted to comment in the text source, everything before the
+</I>&gt;<i> first text block (i.e. before the first paragraph using the matching comment
+</I>&gt;<i> string) will be hidden away (in HTML or PDF output).
+</I>&gt;<i>
+</I>&gt;<i> This seems a good compromise, the advantages
+</I>&gt;<i>
+</I>&gt;<i> * line numbers are kept
+</I>&gt;<i> * the &quot;normal&quot; code conversion rules (indent/unindent by `codeindent` apply
+</I>&gt;<i> * greater flexibility: you can hide a repeating header in a project
+</I>&gt;<i>   consisting of many source files.
+</I>&gt;<i>
+</I>&gt;<i> set off the disadvantages
+</I>&gt;<i>
+</I>&gt;<i> - it may come as surprise if a part of the file is not &quot;printed&quot;,
+</I>&gt;<i> - one more syntax element to learn for rst newbees to start with pylit,
+</I>&gt;<i>   (however, starting from the code source, this will be auto-generated)
+</I>&gt;<i>
+</I>&gt;<i> In the case that there is no matching comment at all, the complete code
+</I>&gt;<i> source will become a comment -- however, in this case it is not very likely
+</I>&gt;<i> the source is a literate document.
+</I>&gt;<i>
+</I>
+Hmm, this already fooled me on the very first example I tried: I
+started by drafting some Python code and then trying to use PyLit to
+turn it into a reST document for adding L.P. documentation.
+
+For instance::
+
+  #!/usr/bin/env python
+  #
+  # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+  #
+  #
+  # This is used as an introductory example to literate programming
+  # in the literateprograms.org Wiki.
+
+  # count down from 99 to 1
+  for bottles in range(99,0,-1):
+      ....
+
+is mapped to reST::
+
+  ..  #!/usr/bin/env python
+    #
+    # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+    #
+    # This is used as an introductory example to literate programming
+    # in the literateprograms.org Wiki.
+    #
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+
+that is, a whole comment paragraph, whereas the input *code source*::
+
+  #!/usr/bin/env python
+  #
+  # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+  #
+
+  # This is used as an introductory example to literate programming
+  # in the literateprograms.org Wiki.
+
+  # count down from 99 to 1
+  for bottles in range(99,0,-1):
+      ....
+
+is correctly mapped to reST::
+
+  ..  #!/usr/bin/env python
+    #
+    # 99bottles.py -- print the famous &quot;99 bottles of beer&quot; song lyrics
+    #
+
+  This is used as an introductory example to literate programming
+  in the literateprograms.org Wiki.
+
+  ::
+
+    # count down from 99 to 1
+    for bottles in range(99,0,-1):
+        ....
+
+Although this might justly regarded as a corner case, it may confuse
+novices (like I am); it should be clearly stated in the documentation
+that a documentation paragraph should *separate* the header from the
+code (meaning, there should be a block, preceded and followed by an
+empty line, all whose lines match the doc comment string).
+
+Could the state machine in PyLit be modified to allow three states,
+&quot;header&quot; (H), &quot;code&quot; (C) and &quot;text&quot; (T), starting in &quot;header&quot; mode and
+allowing transitions from H to C *or* T, from C to T and vice-versa,
+but never from C/T to H?  Like this::
+
+  +--- H ---+
+  |         |
+  v         v
+  C &lt;-----&gt; T
+
+
+&gt;<i> (I do not really like the additional indent of the first line, however
+</I>&gt;<i> ``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+</I>&gt;<i> Increasing the indent of all code parts is possible but makes bad use of
+</I>&gt;<i> available line space. And for Python users the problem is familiar from
+</I>&gt;<i> long string literals like::
+</I>&gt;<i>
+</I>&gt;<i>   s = &quot;&quot;&quot;first line
+</I>&gt;<i>   second line
+</I>&gt;<i>   &quot;&quot;&quot;
+</I>&gt;<i> )
+</I>&gt;<i>
+</I>
+PyLit could add two spaces &quot;  &quot; to all the lines in the header except the
+first one (in code2txt), and remove them in txt2code; this would align
+all lines in the converted header, while maintaing the comment block
+within correct reST syntax.
+
+Ciao,
+Riccardo
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000004.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

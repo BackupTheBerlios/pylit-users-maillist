@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit] processing emacs lisp files with PyLit
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-May/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20processing%20emacs%20lisp%20files%20with%20PyLit&In-Reply-To=%3C1c34ba170705140623s4a641c99i375221033ad3a1fd%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit] processing emacs lisp files with PyLit</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20processing%20emacs%20lisp%20files%20with%20PyLit&In-Reply-To=%3C1c34ba170705140623s4a641c99i375221033ad3a1fd%40mail.gmail.com%3E"
+       TITLE="[pylit] processing emacs lisp files with PyLit">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Mon May 14 15:23:27 CEST 2007</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Dear Guenther,
+
+I'm very sorry for my long silence - in the past months I have moved
+to a new town and started a new job, and this has disconnected me from
+the internet and all activity for a long while...
+
+However, now I'm back and so here's a cleaner patch for ELisp support.
+The code is much simpler than my first attempt, thanks to your
+suggestions.
+
+Three files are attached to this email:
+      - patch against `pylit.py` (SVN rev 44)
+      - new files `src/filters.py` and `test/test_filters.py`
+
+A few refinements could be done on filters.py and test_filters is very
+rough, but it's working now, and it makes a good release candidate
+IMHO.
+
+
+What is in the patch:
+
+  - The PyLitConverter interface has been slightly changed, adding
+    `iterlines` and `iterblocks` methods, so that Filters and
+    Converters can be chained, and a filter/converter can use another
+    filter/converter as a `data` source.  By default, `__iter__` ==
+    `iterblocks` for compatiblity with the old code (but I think it's
+    not used anymore).
+
+    The `iterlines` method's purpose is twofold:
+
+      1) since the ElispText2Code filter will process pylit.Text2Code
+         *output*, a system is needed to get PyLit output one line at
+         a time;
+
+      2) it is overridden in filter classes to perform actual
+         substitution in lines -- this is the only method that filters
+         classes need to override.
+
+    The `iterblocks` method is the old Text2Code and Code2Text
+    `__iter__` method.
+
+  - The chain of filters/converters is built in the `get_converter()`
+    function: a new keyword arg &quot;filters&quot; holds a list of filters:
+    Text2Code (resp. Code2Text) is added as the last (resp. first)
+    element of the chain.
+
+  - filters.py defines a `by_language` dictionary, that associates a
+    list of filters with a language name.
+
+    A similar `by_name` dictionary could be used to provide the user
+    with a ``--filter`` option to select the wanted filters:
+    ``--filter=FOO`` would chain filters in `by_name{FOO}`.  I haven't
+    coded this yet.
+
+Cheers,
+Riccardo
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: elisp.r44.diff
+Type: text/x-patch
+Size: 5177 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment.bin">https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment.bin</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: filters.py
+Type: text/x-python
+Size: 7912 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment.py">https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment.py</A>&gt;
+-------------- next part --------------
+A non-text attachment was scrubbed...
+Name: test_filters.py
+Type: text/x-python
+Size: 4104 bytes
+Desc: not available
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment-0001.py">https://lists.berlios.de/pipermail/pylit-users/attachments/20070514/846cc7f3/attachment-0001.py</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

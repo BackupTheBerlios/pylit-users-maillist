@@ -1,0 +1,475 @@
+From riccardo.murri at gmail.com  Mon Jan 29 18:28:53 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Mon, 29 Jan 2007 18:28:53 +0100
+Subject: [pylit-users] how to handle initial file header?
+Message-ID: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+
+(Upon Guenther's, suggestion, we continue on-list a discussion that
+started in private emails.  I hope the quotations provide enough
+context for others to follow.)
+
+
+On 1/25/07, G. Milde <g.milde at quantentunnel.de> wrote:
+>
+> On 24.01.07, Riccardo Murri wrote:
+> >
+> > It seems to me that there is a general need for similar header
+> > processing, in almost any programming language: every source file that
+> > is likely to be publicly available on the web will carry copyright and
+> > licence information at the start of the file, at a minimum.
+>
+> Well, but I suppose in many cases this information should show also in
+> the pretty printed (or html) document.
+>
+
+Hmmm, yes.  We can think of it as a sort of a colophon?  My proposal
+would then be: the colophon is printed in small size (or any other way
+that makes it evident it is not the main text, and may probably be
+omitted on first reading).
+
+I wouldn't like the legal, keywords and such stuff [1]_ to appear as
+part of the normal text (even before the main title, thus gaining
+importance!); with noweb, I would postpone it to an appendix, but it's
+perfectly ok to render it as a colophon.
+
+
+> > I see that PyLit can already handle the ``#!`` line as a special
+> > header; it would be nice to extend PyLit so that it can translate all
+> > the "leading portion" of a file to reST comments.
+>
+> > A criterion could be: everything from the start of the file to the
+> > first blank line is turned into a reST comment.
+>
+> The advantage of this decision is, that it is simple. I really like it,
+> but I will think about the consequences before implementing...
+>
+> The disadvantage is, that every source file needs a header (which will
+> not show in the pretty-printed document!).
+>
+
+Yes, a coding convention would then be: every PyLit file needs a
+header/colophon (which might boil down to an empty header, that is, a
+file beginning with an empty line).
+
+One might add a ``--no-colophon`` option, to instruct PyLit not to
+treat the first comment block specially.
+
+
+> > For instance, Python code::
+>
+> >  #! /usr/bin/env python
+> >  #
+> >  # foo -- a script to bar the baz's
+> >  #
+> >  # Copyright (c) 2007 ...
+> >  #
+>
+> >  # This starts the documentation comments,
+> >  # as it occurs after a blank line.
+>
+> > Would be turned by PyLit's code2txt into::
+>
+> >  ..
+> >    #! /usr/bin/env python
+> >    #
+> >    # foo -- a script to bar the baz's
+> >    #
+> >    # Copyright (c) 2007 ...
+> >    #
+>
+> >  This starts the documentation comments,
+> >  as it occurs after a blank line.
+>
+> OK, no problem here to have the Copyright in the fine print::
+>
+>   #! /usr/bin/env python
+>
+>   # foo -- a script to bar the baz's
+>   #
+>   # Copyright (c) 2007 ...
+>   #
+>
+
+Yes, but consider this excerpt from ELisp package atom-blogger_ ::
+
+   ;;; atom-blogger.el --- Utilities for Atom Blogger API
+   ;;;$Id: atom-blogger.el,v 24.1 2006/10/21 01:19:41 raman Exp $
+   ;;; $Author: raman $
+   ;;; Description:  ATOM Blogger API
+   ;;; Keywords: Blogger Atom API
+   ;;{{{  LCD Archive entry:
+
+   ;;; LCD Archive Entry:
+   ;;; atom-blogger| T. V. Raman |raman at google.com
+   ;;; An emacs interface to Blogger|
+   ;;; $Date: 2006/10/21 01:19:41 $ |
+   ;;;  $Revision: 24.1 $ |
+   ;;; Location undetermined
+   ;;; License: GPL
+   ;;;
+   ...
+
+The file header contains information that is formatted for automatic
+information retrieval and quite ugly for a human to look at, before
+the (human readable and properly formatted) copyright and licence
+text.
+
+.. _atom-blogger:
+http://www.koders.com/lisp/fid9C037B023D5D596A2C8C6A552CEA27A93FF26139.aspx?s=Raman
+
+(The above example has an empty line in the middle of the
+header/colophon, so the file would need to be reformatted anyway to
+comply with the suggested PyLit coding convention.)
+
+
+> But how about a simple example ``hello.py``::
+>
+>   # A famous example code printing a friendly greeting
+>
+>   print "hello world"
+>
+> I would have to introduce a "dummy" header. (And if the file is
+> not intended for command line use, a "shebang line" is not appropriate.
+>
+> This is why I am not sure whether it poses a too serious limitation.
+> Maybe, this is no problem, as a language (or coding convention) either
+> requires something to be the first line(s) or would tolerate an empty
+> first line (signifying an empty header).
+>
+> But how much of a surprise will it be that the first "paragraph" is not
+> printed in the docutils output?
+>
+
+Do you think it would be confusing still if the header is printed in
+small type?
+
+
+> How about a ``.. header::`` directive instead?
+>
+> Or a generic ``.. admonition:: header``, to be compatible with the
+> standard rst.
+>
+> Maybe an option: --hide-header could use the variant ``.. header`` to
+> produce non-visible headers.
+>
+> Or let::
+>
+>   #! /usr/bin/env python
+>
+>   # foo -- a script to bar the baz's
+>   # ...
+>
+> become
+>
+>   Header ::
+>
+>     #! /usr/bin/env python
+>
+>   foo -- a script to bar the baz's
+>   ...
+>
+> as visible header and
+>
+>   .. Header ::
+>
+>     #! /usr/bin/env python
+>
+>   foo -- a script to bar the baz's
+>   ...
+>
+> as non-visible header.
+>
+> The state machine would start with "code" state and the code state
+> handler would prepend the ``Header ::`` or ``.. Header ::`` line for the
+> first code block (if it is non-empty).
+>
+> If a file starts with a "canonical" comment, an empty header block is
+> returned by the code handler.
+>
+> For txt2code, the text handler would look for ``Header ::`` at the end of
+> the first text block and disregard it in case this is found.
+>
+>
+
+I'm not sure I understand this directive proposal: are you suggesting
+that text from the first comment block in the *code* source (i.e.,
+from the start of the file up to the first blank line) is wrapped into
+a ``.. header::`` directive, instead of a reST comment (as per my
+original proposal)?
+
+If it is so, then I agree, and my own choice would be
+``.. admonition:: Colophon`` for the following reasons:
+
+  - It is compatible with standard reST, whereas a custom directive
+    ``.. header::`` is not.
+
+  - Its appearance is easily controlled with standard rst converters
+    (CSS or LaTeX).
+
+  - I prefer "Colophon" over "header" because "header" is already an
+    overloaded word, both in programming and in typography.  (Albeit
+    "header" correctly states that it's located at the "head" of the
+    file.)
+
+Cheers,
+Riccardo
+
+
+From riccardo.murri at gmail.com  Mon Jan 29 19:16:37 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Mon, 29 Jan 2007 19:16:37 +0100
+Subject: [pylit-users] processing emacs lisp files with PyLit
+Message-ID: <1c34ba170701291016k532a13c5w619a04819176dc8f@mail.gmail.com>
+
+(Upon Guenther's, suggestion, we continue on-list a discussion that
+started in private emails.  I hope the quotations provide enough
+context for others to follow.)
+
+
+On 1/25/07, G. Milde <g.milde at quantentunnel.de> wrote:
+>
+> On 24.01.07, Riccardo Murri wrote:
+>
+> > A thing I noted while coding pylit.el: I wished to document the source
+> > with PyLit, but ELisp files do, by convention, start with a header
+> > stating copyright information, keywords, licence, and a few other things.
+> > (See http://www.gnu.org/software/emacs/elisp/html_node/Library-Headers.html)
+> > Instructions on how to use/install the package, changelog, and code
+> > follow, introduced by ``;;; Commentary:``, ``;;; History:`` and ``;;;
+> > Code:`` markers.
+>
+> For processing with docutils, ::
+>
+>   ;; Commentary
+>   ;; ----------
+>
+> and the like would be more appropriate
+>
+
+Indeed, the ELisp section headers (``;;;Commentary:``, ``;;;Code:``
+and the like) make little sense in the documentation file as real reST
+section headers - they are used to mark a distinction in the ELisp
+*code* file.
+
+Yet, -up to my knowledge- some Emacs tools rely upon those formatting
+conventions to extract useful informations from the ELisp source, so
+they have to stay in the shipped ELisp code source.  (For instance,
+the list of keywords; Emacs then can list the files in the ELisp
+library matching a certain keyword.)
+
+Can we just hide the ELisp section headers in pseudo-directives?
+Like this: ELisp source::
+
+  ;;;Commentary:
+  ;; This package provides Emacs support for the
+  ;; PyLit literate programming system.
+
+is translated to the document text [1]_ ::
+
+  .. elisp: ;;;Commentary:
+
+  This package provides Emacs support for the
+  PyLit literate programming system.
+
+When converting back to code, the line ``;;;Commentary:`` is inserted
+back.
+
+This can be easily accomplished with a little program filtering the
+input/output of PyLit.
+
+Another approach could be to plug a generic filter into the Python
+code; for most languages, the filter would just let characters flow
+through unchanged; for ELisp (and maybe a few others), it should
+perform simple substitutions:
+
+  ``;;;Commentary:`` <-> ``;; .. elisp: ;;;Commentary:``
+
+What do you think of this?
+
+
+.. [1] A reST-correct way to do this could be::
+
+     .. raw:: elisp
+
+       ;;;Commentary:
+
+   But parsing this back in txt2code would require some extra
+   effort...
+
+
+Riccardo
+
+
+From milde at users.berlios.de  Wed Jan 31 11:33:23 2007
+From: milde at users.berlios.de (G. Milde)
+Date: Wed, 31 Jan 2007 11:33:23 +0100
+Subject: [pylit-users] how to handle initial file header?
+In-Reply-To: <20070130143833.GB15867@localhost>
+References: <1c34ba170701290928s8acc464we998cfed69563922@mail.gmail.com>
+	<20070130143833.GB15867@localhost>
+Message-ID: <20070131103323.GB5352@localhost>
+
+On 29.01.07, Riccardo Murri wrote:
+> On 1/25/07, G. Milde <g.milde at quantentunnel.de> wrote:
+> > On 24.01.07, Riccardo Murri wrote:
+> > >
+> > > It seems to me that there is a general need for similar header
+> > > processing, in almost any programming language: every source file that
+> > > is likely to be publicly available on the web will carry copyright and
+> > > licence information at the start of the file, at a minimum.
+...
+
+> > > it would be nice to extend PyLit so that it can translate all
+> > > the "leading portion" of a file to reST comments.
+
+> > > A criterion could be: everything from the start of the file to the
+> > > first blank line is turned into a reST comment.
+
+How about 
+
+* any code that appears before the first text block is translated to a rst
+  comment?
+
+If we want to keep the line numbers in sync for text and code source, the
+reStructured Text markup for these header lines must start at the same line
+as the first header line. Therfore, header lines could not be marked as
+literal block (this would require the "::" and an empty line above the code).
+
+OTOH, a *comment* may start at the same line as the comment marker and it
+includes subsequent indented lines. Comments are visible in the reStructured
+Text source but hidden in the pretty-printed output.
+
+With a header converted to comment in the text source, everything before the
+first text block (i.e. before the first paragraph using the matching comment
+string) will be hidden away (in HTML or PDF output). 
+
+This seems a good compromise, the advantages
+
+* line numbers are kept
+* the "normal" code conversion rules (indent/unindent by `codeindent` apply
+* greater flexibility: you can hide a repeating header in a project
+  consisting of many source files.
+
+set off the disadvantages
+
+- it may come as surprise if a part of the file is not "printed",
+- one more syntax element to learn for rst newbees to start with pylit,
+  (however, starting from the code source, this will be auto-generated)
+
+In the case that there is no matching comment at all, the complete code
+source will become a comment -- however, in this case it is not very likely
+the source is a literate document.
+
+If needed for the documentation, it is possible to repeat the header in (or
+after) the first text block  
+
+> > > For instance, Python code::
+> >
+> > >  #! /usr/bin/env python
+> > >  #
+> > >  # foo -- a script to bar the baz's
+> > >  #
+> > >  # Copyright (c) 2007 ...
+> > >  #
+> >
+> > >  # This starts the documentation comments,
+> > >  # as it occurs after a blank line.
+
+This will still work with my proposition, as "#!" != "# " and hence the
+leading block is recognized as code. It would become::
+
+  .. #! /usr/bin/env python
+    #
+    # foo -- a script to bar the baz's
+    #
+    # Copyright (c) 2007 ...
+    #
+
+  This starts the documentation comments,
+  as it occurs after a blank line.
+
+(I do not really like the additional indent of the first line, however
+``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+Increasing the indent of all code parts is possible but makes bad use of
+available line space. And for Python users the problem is familiar from 
+long string literals like::
+
+  s = """first line
+  second line
+  """
+)
+
+> Yes, but consider this excerpt from ELisp package atom-blogger_ ::
+
+>    ;;; atom-blogger.el --- Utilities for Atom Blogger API
+>    ;;;$Id: atom-blogger.el,v 24.1 2006/10/21 01:19:41 raman Exp $
+>    ;;; $Author: raman $
+>    ;;; Description:  ATOM Blogger API
+>    ;;; Keywords: Blogger Atom API
+>    ;;{{{  LCD Archive entry:
+
+>    ;;; LCD Archive Entry:
+>    ;;; atom-blogger| T. V. Raman |raman at google.com
+>    ;;; An emacs interface to Blogger|
+>    ...
+
+> The file header contains information that is formatted for automatic
+> information retrieval and quite ugly for a human to look at, before
+> the (human readable and properly formatted) copyright and licence
+> text.
+...
+> (The above example has an empty line in the middle of the
+> header/colophon, so the file would need to be reformatted anyway to
+> comply with the suggested PyLit coding convention.)
+
+With the new proposion this would automatically work as expected.
+
+If you wish an even more 'pretty printed' preface, the "emacs compatible"
+one should still be "hidden" by filling the blank line with a comment and
+an rst header (or colophon) added instead at a place of your choice.
+
+The simple example ``hello.py``::
+> >
+> >   # A famous example code printing a friendly greeting
+> >
+> >   print "hello world"
+
+will now get an empty header, i.e. the text source becomes::
+
+  A famous example code printing a friendly greeting
+
+  ::
+
+    print "hello world"
+
+> I'm not sure I understand this directive proposal: are you suggesting
+> that text from the first comment block in the *code* source (i.e.,
+> >from the start of the file up to the first blank line) is wrapped into
+> a ``.. header::`` directive, instead of a reST comment (as per my
+> original proposal)?
+
+This was my idea, however I changed it in the current implementation back
+to a comment.
+
+> If it is so, then I agree, and my own choice would be
+> ``.. admonition:: Colophon`` for the following reasons:
+
+I could imagine using a class data attribute to store the "header_string"
+so this could become customizable (at least if pylit is used from Python).
+
+
+Anyway. Try the new 0.2.3 version of pylit to see whether it works as
+expected. I have uploaded it to the SVN__
+Additional documentation and examples are available in the tutorial__ and
+the test__
+
+__ http://svn.berlios.de/svnroot/repos/pylit/trunk/src/pylit.py
+__ http://pylit.berlios.de/tutorial/index.html
+__ http://pylit.berlios.de/examples/pylit_test.py.html
+
+
+Thanks for your ideas
+
+G?nter
+
+

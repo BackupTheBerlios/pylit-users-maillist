@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit-users] how to handle initial file header?
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C20070131103323.GB5352%40localhost%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000001.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit-users] how to handle initial file header?</H1>
+    <B>G. Milde</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20how%20to%20handle%20initial%20file%20header%3F&In-Reply-To=%3C20070131103323.GB5352%40localhost%3E"
+       TITLE="[pylit-users] how to handle initial file header?">milde at users.berlios.de
+       </A><BR>
+    <I>Wed Jan 31 11:33:23 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000001.html">[pylit-users] processing emacs lisp files with PyLit
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2">[ date ]</a>
+              <a href="thread.html#2">[ thread ]</a>
+              <a href="subject.html#2">[ subject ]</a>
+              <a href="author.html#2">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>On 29.01.07, Riccardo Murri wrote:
+&gt;<i> On 1/25/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">g.milde at quantentunnel.de</A>&gt; wrote:
+</I>&gt;<i> &gt; On 24.01.07, Riccardo Murri wrote:
+</I>&gt;<i> &gt; &gt;
+</I>&gt;<i> &gt; &gt; It seems to me that there is a general need for similar header
+</I>&gt;<i> &gt; &gt; processing, in almost any programming language: every source file that
+</I>&gt;<i> &gt; &gt; is likely to be publicly available on the web will carry copyright and
+</I>&gt;<i> &gt; &gt; licence information at the start of the file, at a minimum.
+</I>...
+
+&gt;<i> &gt; &gt; it would be nice to extend PyLit so that it can translate all
+</I>&gt;<i> &gt; &gt; the &quot;leading portion&quot; of a file to reST comments.
+</I>
+&gt;<i> &gt; &gt; A criterion could be: everything from the start of the file to the
+</I>&gt;<i> &gt; &gt; first blank line is turned into a reST comment.
+</I>
+How about 
+
+* any code that appears before the first text block is translated to a rst
+  comment?
+
+If we want to keep the line numbers in sync for text and code source, the
+reStructured Text markup for these header lines must start at the same line
+as the first header line. Therfore, header lines could not be marked as
+literal block (this would require the &quot;::&quot; and an empty line above the code).
+
+OTOH, a *comment* may start at the same line as the comment marker and it
+includes subsequent indented lines. Comments are visible in the reStructured
+Text source but hidden in the pretty-printed output.
+
+With a header converted to comment in the text source, everything before the
+first text block (i.e. before the first paragraph using the matching comment
+string) will be hidden away (in HTML or PDF output). 
+
+This seems a good compromise, the advantages
+
+* line numbers are kept
+* the &quot;normal&quot; code conversion rules (indent/unindent by `codeindent` apply
+* greater flexibility: you can hide a repeating header in a project
+  consisting of many source files.
+
+set off the disadvantages
+
+- it may come as surprise if a part of the file is not &quot;printed&quot;,
+- one more syntax element to learn for rst newbees to start with pylit,
+  (however, starting from the code source, this will be auto-generated)
+
+In the case that there is no matching comment at all, the complete code
+source will become a comment -- however, in this case it is not very likely
+the source is a literate document.
+
+If needed for the documentation, it is possible to repeat the header in (or
+after) the first text block  
+
+&gt;<i> &gt; &gt; For instance, Python code::
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt;  #! /usr/bin/env python
+</I>&gt;<i> &gt; &gt;  #
+</I>&gt;<i> &gt; &gt;  # foo -- a script to bar the baz's
+</I>&gt;<i> &gt; &gt;  #
+</I>&gt;<i> &gt; &gt;  # Copyright (c) 2007 ...
+</I>&gt;<i> &gt; &gt;  #
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt; &gt;  # This starts the documentation comments,
+</I>&gt;<i> &gt; &gt;  # as it occurs after a blank line.
+</I>
+This will still work with my proposition, as &quot;#!&quot; != &quot;# &quot; and hence the
+leading block is recognized as code. It would become::
+
+  .. #! /usr/bin/env python
+    #
+    # foo -- a script to bar the baz's
+    #
+    # Copyright (c) 2007 ...
+    #
+
+  This starts the documentation comments,
+  as it occurs after a blank line.
+
+(I do not really like the additional indent of the first line, however
+``..#! /usr/bin/env python`` would not be treated as comment by docutils.
+Increasing the indent of all code parts is possible but makes bad use of
+available line space. And for Python users the problem is familiar from 
+long string literals like::
+
+  s = &quot;&quot;&quot;first line
+  second line
+  &quot;&quot;&quot;
+)
+
+&gt;<i> Yes, but consider this excerpt from ELisp package atom-blogger_ ::
+</I>
+&gt;<i>    ;;; atom-blogger.el --- Utilities for Atom Blogger API
+</I>&gt;<i>    ;;;$Id: atom-blogger.el,v 24.1 2006/10/21 01:19:41 raman Exp $
+</I>&gt;<i>    ;;; $Author: raman $
+</I>&gt;<i>    ;;; Description:  ATOM Blogger API
+</I>&gt;<i>    ;;; Keywords: Blogger Atom API
+</I>&gt;<i>    ;;{{{  LCD Archive entry:
+</I>
+&gt;<i>    ;;; LCD Archive Entry:
+</I>&gt;<i>    ;;; atom-blogger| T. V. Raman |<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">raman at google.com</A>
+</I>&gt;<i>    ;;; An emacs interface to Blogger|
+</I>&gt;<i>    ...
+</I>
+&gt;<i> The file header contains information that is formatted for automatic
+</I>&gt;<i> information retrieval and quite ugly for a human to look at, before
+</I>&gt;<i> the (human readable and properly formatted) copyright and licence
+</I>&gt;<i> text.
+</I>...
+&gt;<i> (The above example has an empty line in the middle of the
+</I>&gt;<i> header/colophon, so the file would need to be reformatted anyway to
+</I>&gt;<i> comply with the suggested PyLit coding convention.)
+</I>
+With the new proposion this would automatically work as expected.
+
+If you wish an even more 'pretty printed' preface, the &quot;emacs compatible&quot;
+one should still be &quot;hidden&quot; by filling the blank line with a comment and
+an rst header (or colophon) added instead at a place of your choice.
+
+The simple example ``hello.py``::
+&gt;<i> &gt;
+</I>&gt;<i> &gt;   # A famous example code printing a friendly greeting
+</I>&gt;<i> &gt;
+</I>&gt;<i> &gt;   print &quot;hello world&quot;
+</I>
+will now get an empty header, i.e. the text source becomes::
+
+  A famous example code printing a friendly greeting
+
+  ::
+
+    print &quot;hello world&quot;
+
+&gt;<i> I'm not sure I understand this directive proposal: are you suggesting
+</I>&gt;<i> that text from the first comment block in the *code* source (i.e.,
+</I>&gt;<i> &gt;from the start of the file up to the first blank line) is wrapped into
+</I>&gt;<i> a ``.. header::`` directive, instead of a reST comment (as per my
+</I>&gt;<i> original proposal)?
+</I>
+This was my idea, however I changed it in the current implementation back
+to a comment.
+
+&gt;<i> If it is so, then I agree, and my own choice would be
+</I>&gt;<i> ``.. admonition:: Colophon`` for the following reasons:
+</I>
+I could imagine using a class data attribute to store the &quot;header_string&quot;
+so this could become customizable (at least if pylit is used from Python).
+
+
+Anyway. Try the new 0.2.3 version of pylit to see whether it works as
+expected. I have uploaded it to the SVN__
+Additional documentation and examples are available in the tutorial__ and
+the test__
+
+__ <A HREF="http://svn.berlios.de/svnroot/repos/pylit/trunk/src/pylit.py">http://svn.berlios.de/svnroot/repos/pylit/trunk/src/pylit.py</A>
+__ <A HREF="http://pylit.berlios.de/tutorial/index.html">http://pylit.berlios.de/tutorial/index.html</A>
+__ <A HREF="http://pylit.berlios.de/examples/pylit_test.py.html">http://pylit.berlios.de/examples/pylit_test.py.html</A>
+
+
+Thanks for your ideas
+
+G&#252;nter
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000001.html">[pylit-users] processing emacs lisp files with PyLit
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2">[ date ]</a>
+              <a href="thread.html#2">[ thread ]</a>
+              <a href="subject.html#2">[ subject ]</a>
+              <a href="author.html#2">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit] processing emacs lisp files with PyLit
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-June/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20processing%20emacs%20lisp%20files%20with%20PyLit&In-Reply-To=%3C1c34ba170706031728q666f344cm9b1d0dda03df8e95%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit] processing emacs lisp files with PyLit</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit%5D%20processing%20emacs%20lisp%20files%20with%20PyLit&In-Reply-To=%3C1c34ba170706031728q666f344cm9b1d0dda03df8e95%40mail.gmail.com%3E"
+       TITLE="[pylit] processing emacs lisp files with PyLit">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Mon Jun  4 02:28:36 CEST 2007</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#11">[ date ]</a>
+              <a href="thread.html#11">[ thread ]</a>
+              <a href="subject.html#11">[ subject ]</a>
+              <a href="author.html#11">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Dear G&#252;nther,
+
+the pylit_elisp.py that you sent me runs fine with pylit.py rev51,
+with some minor quirks:
+
+  - &quot;elisp&quot; is not defined as a language in the main PyLit, so I've
+    added dynamical loading of languages, driven by the --language
+    command-line option (patch attached)
+
+    However, PyLit cannot guess the language from the file extension
+    this way; one has to explicitly tell it: e.g. this will *not*
+    work::
+
+      pylit -c pylit.el
+
+    Whereas this one will do::
+
+      pylit --language=elisp -c pylit.el
+
+
+  - code2text conversion runs fine; the other way round, though,
+    comment line blocks are joined together.  For instance::
+
+      ;; .. |elisp&gt; ;;; Commentary:
+
+      reST docs here...
+
+    becomes:
+
+      ;;; Commentary:
+      ;;
+      ;; reST docs here...
+
+    To me, the simplest way out of this is for PyLit to pass blank
+    lines through unchanged.  Since you already pointed out that this
+    could lead to unqanted results when doing the other round-trip
+    (text -&gt; code -&gt; text), maybe this could become a selectable user
+    option?  (Should have language-dependent defaults, being &quot;conserve
+    blank lines&quot; for ELisp, and the present behaviour for other
+    languages.)
+
+Other remarks on you proposal follow inline:
+
+On 5/25/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">milde at users.berlios.de</A>&gt; wrote:
+&gt;<i> Some thoughts:
+</I>&gt;<i>
+</I>&gt;<i> 1. The description in
+</I>&gt;<i>    <A HREF="http://www.gnu.org/software/emacs/elisp/html_node/Library-Headers.html#Library-Headers">http://www.gnu.org/software/emacs/elisp/html_node/Library-Headers.html#Library-Headers</A>
+</I>&gt;<i>    says
+</I>&gt;<i>
+</I>&gt;<i>      We use additional stylized comments to subdivide the contents of the
+</I>&gt;<i>      library file. These should be separated by blank lines from anything
+</I>&gt;<i>      else.
+</I>&gt;<i>
+</I>&gt;<i>    i.e. the &quot;special section headers&quot; are followed by a blank line.
+</I>&gt;<i>
+</I>&gt;<i>    OTOH, in rst there is no need for a blank line after the section
+</I>&gt;<i>    header.
+</I>&gt;<i>
+</I>&gt;<i>    -&gt; We could replace the blank line with a section header
+</I>&gt;<i>    &quot;adornment&quot;. Example::
+</I>&gt;<i>
+</I>&gt;<i>      ;;; Commentary:
+</I>&gt;<i>
+</I>&gt;<i>      this is some comment
+</I>&gt;<i>
+</I>&gt;<i>    would become::
+</I>&gt;<i>
+</I>&gt;<i>      Commentary:
+</I>&gt;<i>      ;;;;;;;;;;;
+</I>&gt;<i>      this is some comment
+</I>&gt;<i>
+</I>&gt;<i>    which would be rendered as a section header by docutils.
+</I>&gt;<i>
+</I>&gt;<i>    Back conversion would look for the special headers and if they
+</I>&gt;<i>    are followed by a line of semicolons, i.e.::
+</I>&gt;<i>
+</I>&gt;<i>      if line == comment_string + &quot;;&quot;*len(section_header_string)
+</I>&gt;<i>
+</I>&gt;<i>    it would re-convert it to the ``&quot;;;; &quot; + section_header_string``
+</I>&gt;<i>    form.
+</I>&gt;<i>
+</I>
++1.  It is a very good idea!  It's simpler and much less hackish than
+current system, however it forces on documentation same structure as
+source file.  But I would go for it, anyway.
+
+
+
+&gt;<i> 2. I'd like to see (or make) a C filter that converts::
+</I>&gt;<i>
+</I>&gt;<i>      /* documentation block
+</I>&gt;<i>         more dok */
+</I>&gt;<i>
+</I>&gt;<i>    to::
+</I>&gt;<i>
+</I>&gt;<i>      // documentation block
+</I>&gt;<i>      // more dok
+</I>&gt;<i>
+</I>&gt;<i>    and back again.
+</I>
+Two remarks:
+
+1) Blocks of the form::
+
+   /* some comments,
+      even on more lines */
+
+or::
+
+   /* a comment,
+    * on more than one line,
+    * with asterisk prefixed. */
+
+are commonplace in C source code - using them as documentation blocks
+will render it difficult to convert existing C/C++ sources to
+PyLit.
+
+So I would suggest that doc blocks are marked in some special way.
+Just like Doxygen uses &quot;/**&quot; and &quot;/*!&quot; as documentation markers,
+I would suggest that PyLit uses &quot;/*/&quot;::
+
+  /*/  This is a documentation
+       block, that spans over
+       many lines.
+  /*/
+
+  /* this is an ordinary C comment, it is treated like
+     a code block by PyLit */
+
+The &quot;/*/&quot; appears to be legal, I checked with GCC.
+
+
+2) C++ code is likely to mix both forms of comments, so translating
+/*-comments to //-comments will lead to breaking the bidirectionality
+of PyLit.  I suggest using an &quot;impossible&quot; comment string (like
+'\x08\x08') for converted /*-comments: actually, the converted
+comments are only seen by PyLit's code and do never reach the output
+file, so everything should be fine.
+
+Or, one can abstract the filters a bit more, and have the pre- and
+post-processor chain chew couples `(tag, line)` where `line` is the
+line of input text (a string), and `tag` is one of None, &quot;header&quot;,
+&quot;text&quot;, &quot;code&quot; - meaning that the line belongs to the file header, to
+a text or code block, or that it has not been classified yet.
+So, a filter could alter not just the line contents (like
+pre-processors do now), but it can classify it.  So, within &quot;/*/&quot;, the
+C-block-comments preprocessor would return `(&quot;text&quot;, line)` for every
+input line, and out of it would return `(&quot;code&quot;, line)` instead.  (I
+hope I made myself clear - it's very late and I cannot mock up example
+code right now.)
+
+
+&gt;<i> The problems are in the details:
+</I>&gt;<i>
+</I>&gt;<i>    * Keep indentation or strip 3 leading spaces?
+</I>&gt;<i>
+</I>
+Should strip, like is done with every other form of doc comment.
+
+&gt;<i>    * How about nesting of comments?
+</I>&gt;<i>
+</I>
+C block comments cannot be nested.
+
+&gt;<i>    * Recognize only &quot;/*&quot; at start of line      # Yes!
+</I>&gt;<i>
+</I>&gt;<i>    * Recognize only &quot;*/&quot; at
+</I>&gt;<i>        + end of line (ignoring whitespace)     # I think so
+</I>&gt;<i>        + line of its own
+</I>&gt;<i>        + always if it matches a &quot;/*&quot; at bol
+</I>&gt;<i>        + if followed by a blank line           # I think so
+</I>&gt;<i>
+</I>&gt;<i>    * Store documentation lines and only convert if all conditions
+</I>&gt;<i>      are met. Yield unchanged else.
+</I>&gt;<i>
+</I>
+I agree.
+
+
+Cheers,
+Riccardo
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: pylit.py.r51.diff
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/pylit-users/attachments/20070604/49e01219/attachment.ksh">https://lists.berlios.de/pipermail/pylit-users/attachments/20070604/49e01219/attachment.ksh</A>&gt;
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: pylit_elisp.py.diff
+URL: &lt;<A HREF="https://lists.berlios.de/pipermail/pylit-users/attachments/20070604/49e01219/attachment-0001.ksh">https://lists.berlios.de/pipermail/pylit-users/attachments/20070604/49e01219/attachment-0001.ksh</A>&gt;
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#11">[ date ]</a>
+              <a href="thread.html#11">[ thread ]</a>
+              <a href="subject.html#11">[ subject ]</a>
+              <a href="author.html#11">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>

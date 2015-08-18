@@ -1,0 +1,207 @@
+From riccardo.murri at gmail.com  Mon Jun  4 02:28:36 2007
+From: riccardo.murri at gmail.com (Riccardo Murri)
+Date: Mon, 4 Jun 2007 02:28:36 +0200
+Subject: [pylit] processing emacs lisp files with PyLit
+In-Reply-To: <20070525100352.GA2645@localhost>
+References: <1c34ba170702090130j6f8e344tb31fbac23f817f4@mail.gmail.com>
+	<20070219100341.GA12333@localhost>
+	<1c34ba170702201907j4db79ae3vecd31ffe39af0f22@mail.gmail.com>
+	<1c34ba170702211039n51cfda3bv5da0a43a9c84e477@mail.gmail.com>
+	<20070302104714.GA11325@localhost>
+	<1c34ba170705140623s4a641c99i375221033ad3a1fd@mail.gmail.com>
+	<20070518173510.GA8319@localhost>
+	<1c34ba170705240455l13759afcs83f62566131bac61@mail.gmail.com>
+	<20070525100352.GA2645@localhost>
+Message-ID: <1c34ba170706031728q666f344cm9b1d0dda03df8e95@mail.gmail.com>
+
+Dear G?nther,
+
+the pylit_elisp.py that you sent me runs fine with pylit.py rev51,
+with some minor quirks:
+
+  - "elisp" is not defined as a language in the main PyLit, so I've
+    added dynamical loading of languages, driven by the --language
+    command-line option (patch attached)
+
+    However, PyLit cannot guess the language from the file extension
+    this way; one has to explicitly tell it: e.g. this will *not*
+    work::
+
+      pylit -c pylit.el
+
+    Whereas this one will do::
+
+      pylit --language=elisp -c pylit.el
+
+
+  - code2text conversion runs fine; the other way round, though,
+    comment line blocks are joined together.  For instance::
+
+      ;; .. |elisp> ;;; Commentary:
+
+      reST docs here...
+
+    becomes:
+
+      ;;; Commentary:
+      ;;
+      ;; reST docs here...
+
+    To me, the simplest way out of this is for PyLit to pass blank
+    lines through unchanged.  Since you already pointed out that this
+    could lead to unqanted results when doing the other round-trip
+    (text -> code -> text), maybe this could become a selectable user
+    option?  (Should have language-dependent defaults, being "conserve
+    blank lines" for ELisp, and the present behaviour for other
+    languages.)
+
+Other remarks on you proposal follow inline:
+
+On 5/25/07, G. Milde <milde at users.berlios.de> wrote:
+> Some thoughts:
+>
+> 1. The description in
+>    http://www.gnu.org/software/emacs/elisp/html_node/Library-Headers.html#Library-Headers
+>    says
+>
+>      We use additional stylized comments to subdivide the contents of the
+>      library file. These should be separated by blank lines from anything
+>      else.
+>
+>    i.e. the "special section headers" are followed by a blank line.
+>
+>    OTOH, in rst there is no need for a blank line after the section
+>    header.
+>
+>    -> We could replace the blank line with a section header
+>    "adornment". Example::
+>
+>      ;;; Commentary:
+>
+>      this is some comment
+>
+>    would become::
+>
+>      Commentary:
+>      ;;;;;;;;;;;
+>      this is some comment
+>
+>    which would be rendered as a section header by docutils.
+>
+>    Back conversion would look for the special headers and if they
+>    are followed by a line of semicolons, i.e.::
+>
+>      if line == comment_string + ";"*len(section_header_string)
+>
+>    it would re-convert it to the ``";;; " + section_header_string``
+>    form.
+>
+
++1.  It is a very good idea!  It's simpler and much less hackish than
+current system, however it forces on documentation same structure as
+source file.  But I would go for it, anyway.
+
+
+
+> 2. I'd like to see (or make) a C filter that converts::
+>
+>      /* documentation block
+>         more dok */
+>
+>    to::
+>
+>      // documentation block
+>      // more dok
+>
+>    and back again.
+
+Two remarks:
+
+1) Blocks of the form::
+
+   /* some comments,
+      even on more lines */
+
+or::
+
+   /* a comment,
+    * on more than one line,
+    * with asterisk prefixed. */
+
+are commonplace in C source code - using them as documentation blocks
+will render it difficult to convert existing C/C++ sources to
+PyLit.
+
+So I would suggest that doc blocks are marked in some special way.
+Just like Doxygen uses "/**" and "/*!" as documentation markers,
+I would suggest that PyLit uses "/*/"::
+
+  /*/  This is a documentation
+       block, that spans over
+       many lines.
+  /*/
+
+  /* this is an ordinary C comment, it is treated like
+     a code block by PyLit */
+
+The "/*/" appears to be legal, I checked with GCC.
+
+
+2) C++ code is likely to mix both forms of comments, so translating
+/*-comments to //-comments will lead to breaking the bidirectionality
+of PyLit.  I suggest using an "impossible" comment string (like
+'\x08\x08') for converted /*-comments: actually, the converted
+comments are only seen by PyLit's code and do never reach the output
+file, so everything should be fine.
+
+Or, one can abstract the filters a bit more, and have the pre- and
+post-processor chain chew couples `(tag, line)` where `line` is the
+line of input text (a string), and `tag` is one of None, "header",
+"text", "code" - meaning that the line belongs to the file header, to
+a text or code block, or that it has not been classified yet.
+So, a filter could alter not just the line contents (like
+pre-processors do now), but it can classify it.  So, within "/*/", the
+C-block-comments preprocessor would return `("text", line)` for every
+input line, and out of it would return `("code", line)` instead.  (I
+hope I made myself clear - it's very late and I cannot mock up example
+code right now.)
+
+
+> The problems are in the details:
+>
+>    * Keep indentation or strip 3 leading spaces?
+>
+
+Should strip, like is done with every other form of doc comment.
+
+>    * How about nesting of comments?
+>
+
+C block comments cannot be nested.
+
+>    * Recognize only "/*" at start of line      # Yes!
+>
+>    * Recognize only "*/" at
+>        + end of line (ignoring whitespace)     # I think so
+>        + line of its own
+>        + always if it matches a "/*" at bol
+>        + if followed by a blank line           # I think so
+>
+>    * Store documentation lines and only convert if all conditions
+>      are met. Yield unchanged else.
+>
+
+I agree.
+
+
+Cheers,
+Riccardo
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: pylit.py.r51.diff
+URL: <https://lists.berlios.de/pipermail/pylit-users/attachments/20070604/49e01219/attachment.ksh>
+-------------- next part --------------
+An embedded and charset-unspecified text was scrubbed...
+Name: pylit_elisp.py.diff
+URL: <https://lists.berlios.de/pipermail/pylit-users/attachments/20070604/49e01219/attachment-0001.ksh>
+

@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [pylit-users] processing emacs lisp files with PyLit
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/pylit-users/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20processing%20emacs%20lisp%20files%20with%20PyLit&In-Reply-To=%3C1c34ba170701291016k532a13c5w619a04819176dc8f%40mail.gmail.com%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000000.html">
+   <LINK REL="Next"  HREF="000002.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[pylit-users] processing emacs lisp files with PyLit</H1>
+    <B>Riccardo Murri</B> 
+    <A HREF="mailto:pylit-users%40lists.berlios.de?Subject=Re%3A%20%5Bpylit-users%5D%20processing%20emacs%20lisp%20files%20with%20PyLit&In-Reply-To=%3C1c34ba170701291016k532a13c5w619a04819176dc8f%40mail.gmail.com%3E"
+       TITLE="[pylit-users] processing emacs lisp files with PyLit">riccardo.murri at gmail.com
+       </A><BR>
+    <I>Mon Jan 29 19:16:37 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000000.html">[pylit-users] how to handle initial file header?
+</A></li>
+        <LI>Next message: <A HREF="000002.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1">[ date ]</a>
+              <a href="thread.html#1">[ thread ]</a>
+              <a href="subject.html#1">[ subject ]</a>
+              <a href="author.html#1">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>(Upon Guenther's, suggestion, we continue on-list a discussion that
+started in private emails.  I hope the quotations provide enough
+context for others to follow.)
+
+
+On 1/25/07, G. Milde &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/pylit-users">g.milde at quantentunnel.de</A>&gt; wrote:
+&gt;<i>
+</I>&gt;<i> On 24.01.07, Riccardo Murri wrote:
+</I>&gt;<i>
+</I>&gt;<i> &gt; A thing I noted while coding pylit.el: I wished to document the source
+</I>&gt;<i> &gt; with PyLit, but ELisp files do, by convention, start with a header
+</I>&gt;<i> &gt; stating copyright information, keywords, licence, and a few other things.
+</I>&gt;<i> &gt; (See <A HREF="http://www.gnu.org/software/emacs/elisp/html_node/Library-Headers.html">http://www.gnu.org/software/emacs/elisp/html_node/Library-Headers.html</A>)
+</I>&gt;<i> &gt; Instructions on how to use/install the package, changelog, and code
+</I>&gt;<i> &gt; follow, introduced by ``;;; Commentary:``, ``;;; History:`` and ``;;;
+</I>&gt;<i> &gt; Code:`` markers.
+</I>&gt;<i>
+</I>&gt;<i> For processing with docutils, ::
+</I>&gt;<i>
+</I>&gt;<i>   ;; Commentary
+</I>&gt;<i>   ;; ----------
+</I>&gt;<i>
+</I>&gt;<i> and the like would be more appropriate
+</I>&gt;<i>
+</I>
+Indeed, the ELisp section headers (``;;;Commentary:``, ``;;;Code:``
+and the like) make little sense in the documentation file as real reST
+section headers - they are used to mark a distinction in the ELisp
+*code* file.
+
+Yet, -up to my knowledge- some Emacs tools rely upon those formatting
+conventions to extract useful informations from the ELisp source, so
+they have to stay in the shipped ELisp code source.  (For instance,
+the list of keywords; Emacs then can list the files in the ELisp
+library matching a certain keyword.)
+
+Can we just hide the ELisp section headers in pseudo-directives?
+Like this: ELisp source::
+
+  ;;;Commentary:
+  ;; This package provides Emacs support for the
+  ;; PyLit literate programming system.
+
+is translated to the document text [1]_ ::
+
+  .. elisp: ;;;Commentary:
+
+  This package provides Emacs support for the
+  PyLit literate programming system.
+
+When converting back to code, the line ``;;;Commentary:`` is inserted
+back.
+
+This can be easily accomplished with a little program filtering the
+input/output of PyLit.
+
+Another approach could be to plug a generic filter into the Python
+code; for most languages, the filter would just let characters flow
+through unchanged; for ELisp (and maybe a few others), it should
+perform simple substitutions:
+
+  ``;;;Commentary:`` &lt;-&gt; ``;; .. elisp: ;;;Commentary:``
+
+What do you think of this?
+
+
+.. [1] A reST-correct way to do this could be::
+
+     .. raw:: elisp
+
+       ;;;Commentary:
+
+   But parsing this back in txt2code would require some extra
+   effort...
+
+
+Riccardo
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000000.html">[pylit-users] how to handle initial file header?
+</A></li>
+	<LI>Next message: <A HREF="000002.html">[pylit-users] how to handle initial file header?
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#1">[ date ]</a>
+              <a href="thread.html#1">[ thread ]</a>
+              <a href="subject.html#1">[ subject ]</a>
+              <a href="author.html#1">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/pylit-users">More information about the Pylit-users
+mailing list</a><br>
+</body></html>
